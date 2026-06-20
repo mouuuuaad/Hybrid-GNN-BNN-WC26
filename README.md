@@ -87,6 +87,6 @@ Launch the 10,000 parallel universe simulations.
 
 **4. Generate Analytical Assets:**
 Produce the visual reports and charts for deployment.
-`python src/worldcup/generate_youtube_charts.py`
+`python src/worldcup/generate_charts.py`
 ---
 *Maintained for high-performance AI research. If you are arriving from Linkedin, fork the repository, adjust the hyperparameters, and benchmark your own theories.*
