@@ -1,0 +1,1245 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FIFA World Cup 2026 Monte Carlo Dashboard</title>
+  <style>
+    :root {
+      --turf-black: #06110d;
+      --stand-black: #090d12;
+      --broadcast: #111821;
+      --glass: rgba(14, 22, 28, 0.82);
+      --chalk: #e9f0df;
+      --chalk-dim: #8d9b8f;
+      --var-cyan: #43d9ff;
+      --stud-amber: #ffc857;
+      --boot-red: #ff4d6d;
+      --grass: #36d47a;
+      --green: var(--grass);
+      --cyan: var(--var-cyan);
+      --blue: #6f8cff;
+      --amber: var(--stud-amber);
+      --text: var(--chalk);
+      --muted: var(--chalk-dim);
+      --line: rgba(233, 240, 223, 0.18);
+      --shadow: 0 24px 70px rgba(0, 0, 0, 0.56);
+      --radius: 6px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 18% 12%, rgba(67, 217, 255, 0.12), transparent 27rem),
+        radial-gradient(circle at 72% 3%, rgba(255, 200, 87, 0.10), transparent 20rem),
+        linear-gradient(135deg, #020604 0%, var(--turf-black) 38%, var(--stand-black) 100%);
+      color: var(--chalk);
+      font-family: "Aptos", "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    button:focus-visible {
+      outline: 2px solid var(--stud-amber);
+      outline-offset: 3px;
+    }
+
+    .shell {
+      width: min(1520px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 42px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(360px, 0.7fr) auto;
+      gap: 24px;
+      align-items: center;
+      padding: 22px;
+      border: 1px solid rgba(233, 240, 223, 0.14);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(180deg, rgba(17, 24, 33, 0.92), rgba(5, 11, 10, 0.92));
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .topbar::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, transparent, rgba(67, 217, 255, 0.07), transparent),
+        repeating-linear-gradient(90deg, rgba(233,240,223,0.025) 0 1px, transparent 1px 72px);
+      pointer-events: none;
+    }
+
+    .hero-copy,
+    .status-card,
+    .pitch-signature {
+      position: relative;
+      z-index: 1;
+    }
+
+    .eyebrow {
+      color: var(--stud-amber);
+      font-size: 0.76rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 640px;
+      font-family: Impact, Haettenschweiler, "Arial Narrow Bold", "Arial Black", sans-serif;
+      font-size: clamp(2.15rem, 5.2vw, 5.2rem);
+      font-weight: 900;
+      line-height: 0.88;
+      letter-spacing: 0.01em;
+      text-transform: uppercase;
+    }
+
+    .subtitle {
+      margin: 10px 0 0;
+      color: var(--chalk-dim);
+      max-width: 760px;
+      line-height: 1.55;
+      font-size: 0.98rem;
+    }
+
+    .pitch-signature {
+      min-height: 230px;
+      padding: 12px;
+      border: 1px solid rgba(233, 240, 223, 0.13);
+      border-radius: var(--radius);
+      background: rgba(1, 7, 5, 0.36);
+      transform: rotate(-2deg);
+      box-shadow: inset 0 0 60px rgba(67, 217, 255, 0.05);
+    }
+
+    .pitch-field {
+      position: relative;
+      height: 206px;
+      overflow: hidden;
+      border: 1px solid rgba(233, 240, 223, 0.42);
+      border-radius: 4px;
+      background:
+        linear-gradient(90deg, rgba(233,240,223,0.20) 0 1px, transparent 1px 50%, rgba(233,240,223,0.20) 50% calc(50% + 1px), transparent calc(50% + 1px)),
+        repeating-linear-gradient(90deg, rgba(54, 212, 122, 0.10) 0 34px, rgba(67, 217, 255, 0.045) 34px 68px),
+        linear-gradient(135deg, rgba(6, 17, 13, 0.98), rgba(14, 30, 28, 0.94));
+    }
+
+    .pitch-field::before,
+    .pitch-field::after {
+      content: "";
+      position: absolute;
+      border: 1px solid rgba(233, 240, 223, 0.33);
+      pointer-events: none;
+    }
+
+    .pitch-field::before {
+      width: 92px;
+      height: 92px;
+      border-radius: 50%;
+      left: calc(50% - 46px);
+      top: calc(50% - 46px);
+    }
+
+    .pitch-field::after {
+      width: 56px;
+      height: 118px;
+      right: -1px;
+      top: 43px;
+      border-right: 0;
+    }
+
+    .pitch-left-box {
+      position: absolute;
+      width: 56px;
+      height: 118px;
+      left: -1px;
+      top: 43px;
+      border: 1px solid rgba(233, 240, 223, 0.33);
+      border-left: 0;
+    }
+
+    .pitch-path {
+      position: absolute;
+      left: 8%;
+      right: 8%;
+      top: 58%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--boot-red), var(--stud-amber), var(--var-cyan));
+      box-shadow: 0 0 22px rgba(67, 217, 255, 0.32);
+      transform: skewY(-8deg);
+    }
+
+    .seed-tick {
+      position: absolute;
+      bottom: 18px;
+      width: 2px;
+      border-radius: 2px;
+      background: var(--stud-amber);
+      opacity: 0.86;
+      box-shadow: 0 0 12px rgba(255, 200, 87, 0.45);
+    }
+
+    .pitch-caption {
+      position: absolute;
+      left: 14px;
+      top: 12px;
+      color: var(--chalk);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.66rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .pitch-result {
+      position: absolute;
+      right: 12px;
+      bottom: 12px;
+      color: var(--stud-amber);
+      font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+      font-size: 1.8rem;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .status-card {
+      min-width: 260px;
+      padding: 16px;
+      border: 1px solid rgba(255, 200, 87, 0.28);
+      border-radius: var(--radius);
+      background: rgba(3, 8, 14, 0.74);
+    }
+
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      margin-top: 10px;
+      color: var(--chalk-dim);
+      font-size: 0.84rem;
+    }
+
+    .status-row strong {
+      color: var(--chalk);
+    }
+
+    .pulse {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--grass);
+      font-weight: 800;
+      font-size: 0.82rem;
+    }
+
+    .pulse::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--grass);
+      box-shadow: 0 0 18px var(--grass);
+      animation: blink 1.3s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 0.45; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      margin: 20px 0;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      padding: 6px;
+      border: 1px solid rgba(233, 240, 223, 0.13);
+      border-radius: var(--radius);
+      background: rgba(4, 10, 8, 0.82);
+    }
+
+    .tab {
+      border: 0;
+      border-radius: 4px;
+      color: var(--chalk-dim);
+      background: transparent;
+      padding: 10px 14px;
+      cursor: pointer;
+      transition: 180ms ease;
+      font-weight: 800;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.82rem;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+    }
+
+    .tab:hover {
+      color: var(--chalk);
+      background: rgba(233, 240, 223, 0.07);
+    }
+
+    .tab.active {
+      color: #090d12;
+      background: linear-gradient(135deg, var(--stud-amber), var(--var-cyan));
+      box-shadow: 0 0 24px rgba(255, 200, 87, 0.18);
+    }
+
+    .simulate-btn {
+      border: 1px solid rgba(255, 200, 87, 0.45);
+      border-radius: 4px;
+      color: #0b0d0a;
+      background: linear-gradient(135deg, var(--stud-amber), #f8f3d2);
+      padding: 11px 16px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: 180ms ease;
+      box-shadow: 0 0 30px rgba(255, 200, 87, 0.14);
+    }
+
+    .simulate-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 34px rgba(255, 200, 87, 0.22);
+    }
+
+    .simulate-btn:disabled {
+      opacity: 0.65;
+      cursor: wait;
+      transform: none;
+    }
+
+    .view {
+      display: none;
+    }
+
+    .view.active {
+      display: block;
+      animation: viewIn 260ms ease;
+    }
+
+    @keyframes viewIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      border: 1px solid rgba(233, 240, 223, 0.13);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(17, 24, 33, 0.9), rgba(5, 11, 10, 0.92));
+      box-shadow: var(--shadow);
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 18px;
+      border-bottom: 1px solid rgba(233, 240, 223, 0.11);
+    }
+
+    .panel-title {
+      margin: 0;
+      font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+      font-size: 1.25rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .panel-kicker {
+      color: var(--chalk-dim);
+      font-size: 0.8rem;
+      font-weight: 700;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .leaderboard {
+      padding: 10px 16px 16px;
+    }
+
+    .team-row {
+      display: grid;
+      grid-template-columns: 34px minmax(120px, 180px) minmax(140px, 1fr) 62px;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(233, 240, 223, 0.07);
+    }
+
+    .team-row:last-child {
+      border-bottom: 0;
+    }
+
+    .rank {
+      color: var(--stud-amber);
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .team {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-width: 0;
+      font-weight: 850;
+    }
+
+    .badge {
+      width: 28px;
+      height: 28px;
+      flex: 0 0 28px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(39, 215, 255, 0.22), rgba(57, 255, 136, 0.18));
+      border: 1px solid rgba(233, 240, 223, 0.24);
+      color: var(--chalk);
+      font-size: 0.72rem;
+      font-weight: 900;
+    }
+
+    .team-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-shell {
+      height: 12px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(233, 240, 223, 0.08);
+      border: 1px solid rgba(233, 240, 223, 0.11);
+    }
+
+    .bar {
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--boot-red), var(--stud-amber), var(--var-cyan));
+      box-shadow: 0 0 20px rgba(255, 200, 87, 0.22);
+      transition: width 900ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .percent {
+      text-align: right;
+      color: var(--chalk);
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      padding: 16px;
+    }
+
+    .metric {
+      padding: 14px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(233, 240, 223, 0.12);
+      background: rgba(3, 8, 7, 0.72);
+    }
+
+    .metric span {
+      display: block;
+      color: var(--chalk-dim);
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 7px;
+      font-size: 1.5rem;
+      color: var(--chalk);
+    }
+
+    .mini-table {
+      width: 100%;
+      padding: 0 16px 16px;
+      border-collapse: collapse;
+    }
+
+    .mini-table th,
+    .mini-table td {
+      padding: 11px 8px;
+      border-bottom: 1px solid rgba(233, 240, 223, 0.07);
+      text-align: left;
+      font-size: 0.86rem;
+    }
+
+    .mini-table th {
+      color: var(--chalk-dim);
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .mini-table td:last-child,
+    .mini-table th:last-child {
+      text-align: right;
+    }
+
+    .bracket-wrap {
+      position: relative;
+      border: 1px solid rgba(233, 240, 223, 0.13);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(180deg, rgba(17, 24, 33, 0.78), rgba(5, 11, 10, 0.93)),
+        repeating-linear-gradient(0deg, rgba(233,240,223,0.022) 0 1px, transparent 1px 44px);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .bracket-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(233, 240, 223, 0.11);
+    }
+
+    .bracket-toolbar small {
+      color: var(--chalk-dim);
+      line-height: 1.4;
+    }
+
+    .bracket-scroll {
+      overflow: auto;
+      padding: 20px;
+    }
+
+    .bracket {
+      min-width: 1180px;
+      display: grid;
+      grid-template-columns: 210px 210px 210px 210px 210px 210px;
+      gap: 28px;
+      align-items: stretch;
+    }
+
+    .round {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      gap: 16px;
+      min-height: 1120px;
+      position: relative;
+    }
+
+    .round.r16 { padding: 32px 0; }
+    .round.qf { padding: 96px 0; }
+    .round.sf { padding: 224px 0; }
+    .round.final { padding: 432px 0; }
+    .round.champion-round { padding: 510px 0; }
+
+    .round-title {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      margin-bottom: 2px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      color: var(--stud-amber);
+      background: rgba(4, 9, 8, 0.88);
+      border: 1px solid rgba(255, 200, 87, 0.18);
+      font-size: 0.74rem;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .match {
+      position: relative;
+      padding: 9px;
+      border: 1px solid rgba(233, 240, 223, 0.14);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(90deg, rgba(233,240,223,0.045) 0 1px, transparent 1px),
+        linear-gradient(180deg, rgba(13, 21, 26, 0.98), rgba(5, 10, 9, 0.98));
+      transition: transform 170ms ease, border-color 170ms ease, box-shadow 170ms ease;
+      cursor: default;
+    }
+
+    .match::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 100%;
+      width: 28px;
+      height: 1px;
+      background: var(--line);
+    }
+
+    .champion-card::after,
+    .champion-round .match::after {
+      display: none;
+    }
+
+    .match:hover {
+      transform: scale(1.025);
+      border-color: rgba(255, 200, 87, 0.58);
+      box-shadow: 0 0 28px rgba(255, 200, 87, 0.16);
+      z-index: 10;
+    }
+
+    .match:hover .tooltip {
+      opacity: 1;
+      transform: translate(-50%, -8px);
+      pointer-events: auto;
+    }
+
+    .match-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 7px;
+      color: var(--chalk-dim);
+      font-size: 0.68rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .side {
+      display: grid;
+      grid-template-columns: 24px minmax(0, 1fr) 48px;
+      gap: 8px;
+      align-items: center;
+      padding: 7px 6px;
+      border-radius: 6px;
+      color: var(--chalk-dim);
+    }
+
+    .side + .side {
+      margin-top: 4px;
+    }
+
+    .side.winner {
+      color: var(--chalk);
+      background: rgba(255, 200, 87, 0.08);
+      box-shadow: inset 2px 0 0 var(--stud-amber);
+    }
+
+    .flag {
+      width: 24px;
+      height: 18px;
+      display: grid;
+      place-items: center;
+      border-radius: 3px;
+      background: linear-gradient(135deg, rgba(67, 217, 255, 0.22), rgba(255, 200, 87, 0.16));
+      border: 1px solid rgba(233, 240, 223, 0.22);
+      font-size: 0.58rem;
+      font-weight: 900;
+      color: var(--chalk);
+    }
+
+    .side-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 850;
+      font-size: 0.82rem;
+    }
+
+    .side-prob {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-size: 0.72rem;
+      font-weight: 900;
+    }
+
+    .tooltip {
+      position: absolute;
+      left: 50%;
+      bottom: 100%;
+      min-width: 190px;
+      opacity: 0;
+      transform: translate(-50%, 0);
+      padding: 9px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 200, 87, 0.28);
+      background: rgba(3, 8, 14, 0.96);
+      color: var(--chalk);
+      box-shadow: 0 14px 38px rgba(0,0,0,0.45);
+      transition: 150ms ease;
+      pointer-events: none;
+      font-size: 0.76rem;
+      z-index: 20;
+    }
+
+    .tooltip strong {
+      color: var(--stud-amber);
+    }
+
+    .champion-card {
+      min-height: 120px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      border-color: rgba(255, 207, 90, 0.42);
+      background:
+        radial-gradient(circle at 50% 0%, rgba(255, 200, 87, 0.22), transparent 80px),
+        linear-gradient(180deg, rgba(28, 25, 15, 0.98), rgba(7, 9, 7, 0.98));
+      box-shadow: 0 0 34px rgba(255, 207, 90, 0.12);
+    }
+
+    .champion-label {
+      color: var(--stud-amber);
+      font-size: 0.72rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .champion-name {
+      margin-top: 8px;
+      font-size: 1.05rem;
+      font-weight: 950;
+    }
+
+    .loading {
+      display: grid;
+      place-items: center;
+      min-height: 360px;
+      border: 1px solid rgba(233, 240, 223, 0.13);
+      border-radius: var(--radius);
+      background: rgba(5, 11, 10, 0.78);
+      color: var(--chalk-dim);
+      text-align: center;
+      padding: 30px;
+    }
+
+    .loader {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      border: 3px solid rgba(233, 240, 223, 0.16);
+      border-top-color: var(--stud-amber);
+      animation: spin 850ms linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes flash {
+      0%, 100% { filter: none; }
+      50% { filter: drop-shadow(0 0 16px rgba(255, 200, 87, 0.46)); }
+    }
+
+    .is-simulating .match {
+      animation: flash 260ms infinite;
+    }
+
+    @media (max-width: 920px) {
+      .topbar,
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .pitch-signature {
+        transform: none;
+        min-height: 190px;
+      }
+
+      .pitch-field {
+        height: 170px;
+      }
+
+      h1 {
+        font-size: clamp(2rem, 14vw, 3.6rem);
+      }
+
+      .status-card {
+        min-width: 0;
+      }
+
+      .team-row {
+        grid-template-columns: 28px minmax(100px, 1fr) 82px;
+      }
+
+      .team-row .bar-shell {
+        grid-column: 2 / -1;
+      }
+
+      .metric-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .controls {
+        align-items: stretch;
+      }
+
+      .tabs,
+      .simulate-btn {
+        width: 100%;
+      }
+
+      .tab {
+        flex: 1;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="topbar">
+      <div class="hero-copy">
+        <div class="eyebrow">VAR room / Monte Carlo file 2026</div>
+        <h1>Tournament control board</h1>
+        <p class="subtitle">
+          A match-path dashboard for reading 10,000 simulated World Cups: who survives the bracket, where probabilities bend, and which contender leaves the model with the trophy.
+        </p>
+      </div>
+      <div class="pitch-signature" aria-hidden="true">
+        <div class="pitch-field">
+          <div class="pitch-left-box"></div>
+          <div class="pitch-caption">48-team field / 32-team cut</div>
+          <div class="pitch-path"></div>
+          <div class="pitch-result">ARG 13.54</div>
+        </div>
+      </div>
+      <aside class="status-card">
+        <div class="pulse" id="loadStatus">Loading CSV mock</div>
+        <div class="status-row"><span>Source</span><strong>world_cup_2026_simulation_results.csv</strong></div>
+        <div class="status-row"><span>Teams</span><strong id="teamCount">--</strong></div>
+        <div class="status-row"><span>Model</span><strong>GNN + BNN</strong></div>
+      </aside>
+    </section>
+
+    <section class="controls">
+      <nav class="tabs" aria-label="Dashboard views">
+        <button class="tab active" data-tab="overview">Overview</button>
+        <button class="tab" data-tab="bracket">Knockout Bracket</button>
+      </nav>
+      <button class="simulate-btn" id="simulateBtn">Run Simulation</button>
+    </section>
+
+    <section id="loading" class="loading">
+      <div>
+        <div class="loader"></div>
+        <strong>Parsing simulation results</strong>
+        <p>Mock-loading CSV columns: Reach R32, R16, QF, SF, Final, Win Tournament.</p>
+      </div>
+    </section>
+
+    <section id="appViews" style="display:none">
+      <section class="view active" id="overview">
+        <div class="grid">
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h2 class="panel-title">Top 10 Tournament Favorites</h2>
+                <div class="panel-kicker">Win Tournament %</div>
+              </div>
+              <div class="panel-kicker">Animated leaderboard</div>
+            </div>
+            <div class="leaderboard" id="leaderboard"></div>
+          </article>
+
+          <aside class="panel">
+            <div class="panel-head">
+              <div>
+                <h2 class="panel-title">Prediction Snapshot</h2>
+                <div class="panel-kicker">Simulation aggregate</div>
+              </div>
+            </div>
+            <div class="metric-grid" id="metrics"></div>
+            <table class="mini-table">
+              <thead>
+                <tr>
+                  <th>Team</th>
+                  <th>R32</th>
+                  <th>Final</th>
+                  <th>Win</th>
+                </tr>
+              </thead>
+              <tbody id="snapshotTable"></tbody>
+            </table>
+          </aside>
+        </div>
+      </section>
+
+      <section class="view" id="bracket">
+        <div class="bracket-wrap" id="bracketWrap">
+          <div class="bracket-toolbar">
+            <div>
+              <h2 class="panel-title">Interactive Knockout Tree</h2>
+              <small>Hover a match for win probability and simulated score. The bracket is horizontally scrollable.</small>
+            </div>
+            <div class="panel-kicker" id="bracketMeta">Settled result</div>
+          </div>
+          <div class="bracket-scroll">
+            <div class="bracket" id="bracketTree"></div>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script src="dashboard_data/world_cup_dashboard_data.js"></script>
+  <script>
+    const simulationResults = [{"Team":"Argentina","r32":90.68,"r16":65.79,"qf":46.61,"sf":31.81,"final":20.82,"win":13.54},{"Team":"Spain","r32":94.1,"r16":68.33,"qf":47.38,"sf":31.43,"final":20.33,"win":12.37},{"Team":"France","r32":86.14,"r16":60.12,"qf":40.5,"sf":26.28,"final":16.26,"win":9.76},{"Team":"England","r32":87.86,"r16":59.48,"qf":38.96,"sf":24.31,"final":14.61,"win":8.34},{"Team":"Portugal","r32":84.91,"r16":56.93,"qf":36.43,"sf":21.91,"final":12.76,"win":7.08},{"Team":"Netherlands","r32":80.51,"r16":51.87,"qf":31.31,"sf":17.96,"final":9.51,"win":4.98},{"Team":"Germany","r32":82.87,"r16":52.12,"qf":31.39,"sf":17.5,"final":9.23,"win":4.91},{"Team":"Brazil","r32":80.91,"r16":50.06,"qf":29.82,"sf":16.6,"final":8.76,"win":4.47},{"Team":"Belgium","r32":91.03,"r16":54.82,"qf":30.67,"sf":16.86,"final":8.77,"win":4.08},{"Team":"Colombia","r32":90.7,"r16":53.88,"qf":30.17,"sf":15.75,"final":8,"win":3.93},{"Team":"Ecuador","r32":88.29,"r16":50.05,"qf":26.53,"sf":13.18,"final":6.28,"win":2.82},{"Team":"Japan","r32":78.86,"r16":45.66,"qf":24.85,"sf":12.35,"final":6.07,"win":2.79},{"Team":"Mexico","r32":79.22,"r16":43.45,"qf":23.22,"sf":11.91,"final":5.5,"win":2.4},{"Team":"Morocco","r32":77.94,"r16":44.37,"qf":23.91,"sf":12.1,"final":5.37,"win":2.23},{"Team":"Switzerland","r32":93.15,"r16":47.14,"qf":22.9,"sf":10.77,"final":4.57,"win":1.83},{"Team":"Norway","r32":87.98,"r16":45.61,"qf":22.79,"sf":10.18,"final":4.34,"win":1.75},{"Team":"Croatia","r32":81.83,"r16":43.83,"qf":21.78,"sf":9.95,"final":4.3,"win":1.66},{"Team":"Uruguay","r32":87.66,"r16":44.82,"qf":21.85,"sf":9.18,"final":3.69,"win":1.39},{"Team":"Austria","r32":80.07,"r16":42.33,"qf":20.53,"sf":9.08,"final":3.5,"win":1.25},{"Team":"Australia","r32":76.48,"r16":36.37,"qf":16.62,"sf":6.86,"final":2.87,"win":1.07},{"Team":"Turkey","r32":84.84,"r16":40.73,"qf":18.42,"sf":7.92,"final":2.98,"win":0.96},{"Team":"Algeria","r32":62.53,"r16":32.11,"qf":14.3,"sf":5.76,"final":2.13,"win":0.75},{"Team":"Iran","r32":58.12,"r16":28.37,"qf":12.51,"sf":5.19,"final":1.99,"win":0.68},{"Team":"Canada","r32":68.61,"r16":30.91,"qf":13.1,"sf":5,"final":1.99,"win":0.6},{"Team":"Paraguay","r32":58.04,"r16":27.6,"qf":11.98,"sf":4.72,"final":1.72,"win":0.58},{"Team":"Scotland","r32":75.15,"r16":32.93,"qf":12.42,"sf":4.42,"final":1.51,"win":0.53},{"Team":"United States","r32":50.81,"r16":24.02,"qf":10.36,"sf":4.26,"final":1.59,"win":0.51},{"Team":"South Korea","r32":73.67,"r16":32.69,"qf":13.48,"sf":4.87,"final":1.67,"win":0.47},{"Team":"Senegal","r32":56.7,"r16":27.52,"qf":11.63,"sf":4.54,"final":1.68,"win":0.44},{"Team":"Ivory Coast","r32":59.21,"r16":25.38,"qf":9.51,"sf":3.58,"final":1.1,"win":0.35},{"Team":"Egypt","r32":74.27,"r16":30.22,"qf":11.16,"sf":3.52,"final":0.97,"win":0.3},{"Team":"Panama","r32":68.54,"r16":26.37,"qf":9.16,"sf":2.84,"final":0.91,"win":0.27},{"Team":"Czech Republic","r32":80.96,"r16":30.36,"qf":10.84,"sf":3.69,"final":1.03,"win":0.25},{"Team":"Uzbekistan","r32":60.63,"r16":25.71,"qf":9.56,"sf":3.29,"final":1.06,"win":0.16},{"Team":"Sweden","r32":53.77,"r16":20.02,"qf":6.46,"sf":2.1,"final":0.5,"win":0.14},{"Team":"Tunisia","r32":56.64,"r16":19.06,"qf":5.55,"sf":1.51,"final":0.33,"win":0.12},{"Team":"New Zealand","r32":42.23,"r16":15.21,"qf":4.52,"sf":1.32,"final":0.31,"win":0.06},{"Team":"DR Congo","r32":29.36,"r16":9.45,"qf":2.5,"sf":0.67,"final":0.16,"win":0.04},{"Team":"Qatar","r32":57.01,"r16":14.67,"qf":3.53,"sf":0.71,"final":0.08,"win":0.03},{"Team":"South Africa","r32":35.7,"r16":9.65,"qf":2.55,"sf":0.5,"final":0.12,"win":0.03},{"Team":"Jordan","r32":32.48,"r16":9.34,"qf":2.44,"sf":0.48,"final":0.1,"win":0.03},{"Team":"Bosnia and Herzegovina","r32":45.73,"r16":12.51,"qf":3.12,"sf":0.57,"final":0.13,"win":0.01},{"Team":"Haiti","r32":35.08,"r16":9.47,"qf":2.06,"sf":0.47,"final":0.07,"win":0.01},{"Team":"Curaçao","r32":36.8,"r16":8.92,"qf":1.55,"sf":0.22,"final":0.04,"win":0.01},{"Team":"Iraq","r32":34.79,"r16":10.95,"qf":2.82,"sf":0.63,"final":0.11,"win":0.01},{"Team":"Saudi Arabia","r32":49.45,"r16":14.98,"qf":3.46,"sf":0.84,"final":0.14,"win":0.01},{"Team":"Cape Verde","r32":29.04,"r16":7.02,"qf":1.31,"sf":0.15,"final":0.01,"win":0},{"Team":"Ghana","r32":28.65,"r16":6.8,"qf":1.48,"sf":0.26,"final":0.03,"win":0}];
+
+    const stageLabels = {
+      r32: "Round of 32",
+      r16: "Round of 16",
+      qf: "Quarter-finals",
+      sf: "Semi-finals",
+      final: "Final",
+      champion: "Champion"
+    };
+
+    const $ = (selector) => document.querySelector(selector);
+    const $$ = (selector) => Array.from(document.querySelectorAll(selector));
+
+    const dashboardPayload = window.WORLD_CUP_DASHBOARD_DATA || null;
+    const activeResults = dashboardPayload?.charts?.allTeams
+      ? dashboardPayload.charts.allTeams.map((row) => ({
+          Team: row.team,
+          r32: row.r32,
+          r16: row.r16,
+          qf: row.qf,
+          sf: row.sf,
+          final: row.final,
+          win: row.win
+        }))
+      : simulationResults;
+    const sortedTeams = [...activeResults].sort((a, b) => b.win - a.win);
+    const allTeamNames = activeResults.map((item) => item.Team);
+
+    function initials(name) {
+      return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
+    }
+
+    function probabilityFor(team, key) {
+      const row = activeResults.find((item) => item.Team === team);
+      return row ? row[key] : 0;
+    }
+
+    function weightedWinner(teamA, teamB, stageKey) {
+      const a = probabilityFor(teamA, stageKey) + probabilityFor(teamA, "win") * 1.8;
+      const b = probabilityFor(teamB, stageKey) + probabilityFor(teamB, "win") * 1.8;
+      return a >= b ? teamA : teamB;
+    }
+
+    function generatedScore(winner, loser) {
+      const gap = Math.max(1, Math.round((probabilityFor(winner, "win") - probabilityFor(loser, "win")) / 4) + 1);
+      const loserGoals = probabilityFor(loser, "win") > 4 ? 1 : 0;
+      return `${Math.min(loserGoals + gap, 4)}-${loserGoals}`;
+    }
+
+    function generateBracket(seedOffset = 0) {
+      const seeding = [...sortedTeams];
+      if (seedOffset > 0) {
+        seeding.sort((a, b) => (b.win + Math.random() * seedOffset) - (a.win + Math.random() * seedOffset));
+      }
+
+      const r32Teams = seeding.slice(0, 32).map((item) => item.Team);
+      const seedOrder = [0,31,15,16,7,24,8,23,3,28,12,19,4,27,11,20,1,30,14,17,6,25,9,22,2,29,13,18,5,26,10,21];
+      let currentTeams = seedOrder.map((index) => r32Teams[index]);
+      const rounds = [];
+
+      [
+        ["r32", "r16"],
+        ["r16", "qf"],
+        ["qf", "sf"],
+        ["sf", "final"],
+        ["final", "win"]
+      ].forEach(([roundKey, nextKey]) => {
+        const matches = [];
+        const winners = [];
+        for (let i = 0; i < currentTeams.length; i += 2) {
+          const home = currentTeams[i];
+          const away = currentTeams[i + 1];
+          const winner = weightedWinner(home, away, nextKey);
+          const loser = winner === home ? away : home;
+          winners.push(winner);
+          matches.push({
+            id: `${roundKey}-${i / 2 + 1}`,
+            roundKey,
+            home,
+            away,
+            winner,
+            score: generatedScore(winner, loser),
+            homeProb: probabilityFor(home, nextKey),
+            awayProb: probabilityFor(away, nextKey)
+          });
+        }
+        rounds.push({ key: roundKey, label: stageLabels[roundKey], matches });
+        currentTeams = winners;
+      });
+
+      return {
+        rounds,
+        champion: currentTeams[0]
+      };
+    }
+
+    function bracketFromPayload(payload) {
+      if (!payload?.bracket?.rounds) return null;
+      return {
+        rounds: payload.bracket.rounds.map((round) => ({
+          key: round.key,
+          label: round.name,
+          matches: round.matches.map((match) => ({
+            id: match.id,
+            roundKey: round.key,
+            home: match.home,
+            away: match.away,
+            winner: match.winner,
+            score: match.score,
+            homeProb: match.home_probability,
+            awayProb: match.away_probability
+          }))
+        })),
+        champion: payload.bracket.champion
+      };
+    }
+
+    const generatedBracket = bracketFromPayload(dashboardPayload);
+    let currentBracket = generatedBracket || generateBracket();
+
+    function renderLeaderboard() {
+      const top = sortedTeams.slice(0, 10);
+      const max = Math.max(...top.map((item) => item.win));
+      $("#leaderboard").innerHTML = top.map((item, index) => `
+        <div class="team-row">
+          <div class="rank">${String(index + 1).padStart(2, "0")}</div>
+          <div class="team">
+            <span class="badge">${initials(item.Team)}</span>
+            <span class="team-name">${item.Team}</span>
+          </div>
+          <div class="bar-shell"><div class="bar" data-width="${(item.win / max) * 100}"></div></div>
+          <div class="percent">${item.win.toFixed(2)}%</div>
+        </div>
+      `).join("");
+
+      requestAnimationFrame(() => {
+        $$(".bar").forEach((bar) => {
+          bar.style.width = `${bar.dataset.width}%`;
+        });
+      });
+    }
+
+    function renderMetrics() {
+      const favorite = sortedTeams[0];
+      const averageR32 = activeResults.reduce((sum, item) => sum + item.r32, 0) / activeResults.length;
+      const contenders = activeResults.filter((item) => item.win >= 1).length;
+      $("#metrics").innerHTML = `
+        <div class="metric"><span>Favorite</span><strong>${favorite.Team}</strong></div>
+        <div class="metric"><span>Win Probability</span><strong>${favorite.win.toFixed(2)}%</strong></div>
+        <div class="metric"><span>1%+ Contenders</span><strong>${contenders}</strong></div>
+        <div class="metric"><span>Avg R32 Chance</span><strong>${averageR32.toFixed(1)}%</strong></div>
+        <div class="metric"><span>Simulations</span><strong>10k</strong></div>
+        <div class="metric"><span>Bracket Teams</span><strong>32</strong></div>
+      `;
+
+      $("#snapshotTable").innerHTML = sortedTeams.slice(0, 8).map((item) => `
+        <tr>
+          <td>${item.Team}</td>
+          <td>${item.r32.toFixed(1)}%</td>
+          <td>${item.final.toFixed(1)}%</td>
+          <td>${item.win.toFixed(2)}%</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderPitchTicks() {
+      const field = $(".pitch-field");
+      if (!field || field.dataset.seeded === "true") return;
+      const fragment = document.createDocumentFragment();
+      activeResults.forEach((team, index) => {
+        const tick = document.createElement("span");
+        tick.className = "seed-tick";
+        tick.title = `${team.Team}: ${team.win.toFixed(2)}%`;
+        tick.style.left = `${5 + (index / (activeResults.length - 1)) * 90}%`;
+        tick.style.height = `${8 + Math.max(2, team.win * 3.1)}px`;
+        tick.style.opacity = String(0.32 + Math.min(team.win / 14, 0.68));
+        fragment.appendChild(tick);
+      });
+      field.appendChild(fragment);
+      field.dataset.seeded = "true";
+    }
+
+    function matchTemplate(match, roundIndex) {
+      const homeWon = match.winner === match.home;
+      const awayWon = match.winner === match.away;
+      const tooltip = `${match.winner} advances, projected score ${match.score}. ${match.home}: ${match.homeProb.toFixed(1)}%, ${match.away}: ${match.awayProb.toFixed(1)}%.`;
+      return `
+        <article class="match" data-round="${roundIndex}">
+          <div class="match-meta"><span>${match.id.toUpperCase()}</span><span>${match.score}</span></div>
+          <div class="side ${homeWon ? "winner" : ""}">
+            <span class="flag">${initials(match.home)}</span>
+            <span class="side-name">${match.home}</span>
+            <span class="side-prob">${match.homeProb.toFixed(1)}%</span>
+          </div>
+          <div class="side ${awayWon ? "winner" : ""}">
+            <span class="flag">${initials(match.away)}</span>
+            <span class="side-name">${match.away}</span>
+            <span class="side-prob">${match.awayProb.toFixed(1)}%</span>
+          </div>
+          <div class="tooltip"><strong>${match.winner}</strong><br>${tooltip}</div>
+        </article>
+      `;
+    }
+
+    function renderBracket(bracket) {
+      const roundsMarkup = bracket.rounds.map((round, index) => {
+        const roundClass = index === 1 ? "r16" : index === 2 ? "qf" : index === 3 ? "sf" : index === 4 ? "final" : "";
+        return `
+          <section class="round ${roundClass}">
+            <div class="round-title">${round.label}</div>
+            ${round.matches.map((match) => matchTemplate(match, index)).join("")}
+          </section>
+        `;
+      }).join("");
+
+      $("#bracketTree").innerHTML = `
+        ${roundsMarkup}
+        <section class="round champion-round">
+          <div class="round-title">Champion</div>
+          <article class="match champion-card">
+            <div>
+              <div class="champion-label">Projected Winner</div>
+              <div class="champion-name">${bracket.champion}</div>
+              <div class="badge" style="margin:12px auto 0">${initials(bracket.champion)}</div>
+            </div>
+          </article>
+        </section>
+      `;
+      $("#bracketMeta").textContent = `${bracket.champion} lifts the trophy`;
+    }
+
+    function randomTeam() {
+      return allTeamNames[Math.floor(Math.random() * allTeamNames.length)];
+    }
+
+    function renderRandomizedBracket() {
+      const fakeRounds = [
+        ["r32", 16],
+        ["r16", 8],
+        ["qf", 4],
+        ["sf", 2],
+        ["final", 1]
+      ].map(([key, count]) => ({
+        key,
+        label: stageLabels[key],
+        matches: Array.from({ length: count }, (_, index) => {
+          const home = randomTeam();
+          let away = randomTeam();
+          if (away === home) away = randomTeam();
+          const winner = Math.random() > 0.5 ? home : away;
+          return {
+            id: `${key}-${index + 1}`,
+            roundKey: key,
+            home,
+            away,
+            winner,
+            score: `${Math.floor(Math.random() * 4)}-${Math.floor(Math.random() * 3)}`,
+            homeProb: Math.random() * 100,
+            awayProb: Math.random() * 100
+          };
+        })
+      }));
+
+      renderBracket({ rounds: fakeRounds, champion: randomTeam() });
+    }
+
+    function runSimulationAnimation() {
+      const button = $("#simulateBtn");
+      const wrap = $("#bracketWrap");
+      button.disabled = true;
+      button.textContent = "Simulating...";
+      wrap.classList.add("is-simulating");
+      $("#bracketMeta").textContent = "Monte Carlo shuffle running";
+
+      const interval = setInterval(renderRandomizedBracket, 95);
+      setTimeout(() => {
+        clearInterval(interval);
+        currentBracket = generatedBracket || generateBracket(0.8);
+        renderBracket(currentBracket);
+        wrap.classList.remove("is-simulating");
+        button.disabled = false;
+        button.textContent = "Run Simulation";
+      }, 1500);
+    }
+
+    function bindTabs() {
+      $$(".tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          $$(".tab").forEach((item) => item.classList.remove("active"));
+          $$(".view").forEach((item) => item.classList.remove("active"));
+          tab.classList.add("active");
+          $(`#${tab.dataset.tab}`).classList.add("active");
+        });
+      });
+    }
+
+    function initializeDashboard() {
+      $("#teamCount").textContent = activeResults.length;
+      renderPitchTicks();
+      setTimeout(() => {
+        $("#loadStatus").textContent = "CSV mock loaded";
+        $("#loading").style.display = "none";
+        $("#appViews").style.display = "block";
+        renderLeaderboard();
+        renderMetrics();
+        renderBracket(currentBracket);
+      }, 850);
+    }
+
+    bindTabs();
+    $("#simulateBtn").addEventListener("click", runSimulationAnimation);
+    initializeDashboard();
+  </script>
+</body>
+</html>
