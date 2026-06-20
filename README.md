@@ -86,6 +86,4 @@ Launch the 10,000 parallel universe simulations.
 
 ---
 *Maintained for high-performance AI research. If you are arriving from YouTube, fork the repository, adjust the hyperparameters, and benchmark your own theories.*
-```eof
-
-Hania wila bghit nzidlkm 7wayj khrin m3a README golha lia.
+```
