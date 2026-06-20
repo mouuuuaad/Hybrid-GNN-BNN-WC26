@@ -70,19 +70,23 @@ Where each $\theta^{(i)} \sim q_\phi(\theta)$ represents a sampled, parallel rea
 ratings and simulated championship probability.*
 
 ## ⚙️ Compilation & Execution
+
 Due to the intense matrix multiplications involved in the BNN layers and graph aggregations, a high-performance environment with CUDA is strongly recommended.
 
-**1. Compile and Process Data Pipeline:**
-Run the ingestion scripts to build the historical tensors and connection graphs.
-`python src/data/build_tensors.py`
+**1. Process Data Pipeline:**
+Ingest raw logs and generate model-ready tensors.
+`python src/worldcup/prepare_data.py`
 
 **2. Train the Stochastic Engine:**
-Initialize the deep learning architecture.
-`python src/models/train_bnn.py --epochs 500 --cuda`
+Initialize and optimize the hybrid deep learning architecture.
+`python src/worldcup/train_model.py --epochs 500 --cuda`
 
 **3. Ignite Monte Carlo Inference:**
 Launch the 10,000 parallel universe simulations.
-`python src/inference/monte_carlo.py --sims 10000`
+`python src/worldcup/simulate.py --sims 10000`
 
+**4. Generate Analytical Assets:**
+Produce the visual reports and charts for deployment.
+`python src/worldcup/generate_youtube_charts.py`
 ---
 *Maintained for high-performance AI research. If you are arriving from Linkedin, fork the repository, adjust the hyperparameters, and benchmark your own theories.*
