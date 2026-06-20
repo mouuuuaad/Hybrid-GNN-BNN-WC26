@@ -3,1243 +3,1482 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FIFA World Cup 2026 Monte Carlo Dashboard</title>
+  <title>FIFA World Cup 2026 — Monte Carlo Simulation Dashboard</title>
+  <meta name="description" content="Interactive dashboard powered by a Hybrid GNN + Bayesian Neural Network. 10,000 Monte Carlo simulations of the FIFA World Cup 2026." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
+    /* ═══════════════════════════════════════════════
+       DESIGN TOKENS
+       Strict palette: black, greens, white
+    ═══════════════════════════════════════════════ */
     :root {
-      --turf-black: #06110d;
-      --stand-black: #090d12;
-      --broadcast: #111821;
-      --glass: rgba(14, 22, 28, 0.82);
-      --chalk: #e9f0df;
-      --chalk-dim: #8d9b8f;
-      --var-cyan: #43d9ff;
-      --stud-amber: #ffc857;
-      --boot-red: #ff4d6d;
-      --grass: #36d47a;
-      --green: var(--grass);
-      --cyan: var(--var-cyan);
-      --blue: #6f8cff;
-      --amber: var(--stud-amber);
-      --text: var(--chalk);
-      --muted: var(--chalk-dim);
-      --line: rgba(233, 240, 223, 0.18);
-      --shadow: 0 24px 70px rgba(0, 0, 0, 0.56);
-      --radius: 6px;
+      --bg-deepest:    #020604;
+      --bg-base:       #060b08;
+      --bg-card:       #0a120e;
+      --bg-elevated:   #0e1813;
+      --bg-hover:      #13201a;
+      --border-subtle: #1a2b22;
+      --border-mid:    #243830;
+      --border-bright: #2f4a3d;
+      --text-primary:  #f0f5f2;
+      --text-secondary:#9eb8a8;
+      --text-muted:    #5e7a6a;
+      --green-neon:    #00e64d;
+      --green-bright:  #10b981;
+      --green-mid:     #059669;
+      --green-dim:     #047857;
+      --green-dark:    #064e3b;
+      --glow-sm:       0 0 8px rgba(0,230,77,0.15);
+      --glow-md:       0 0 20px rgba(0,230,77,0.2);
+      --glow-lg:       0 0 40px rgba(0,230,77,0.25);
+      --shadow-card:   0 4px 24px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3);
+      --radius-sm:     6px;
+      --radius-md:     10px;
+      --radius-lg:     14px;
+      --font-sans:     'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-display:  'Outfit', 'Inter', sans-serif;
+      --font-mono:     'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
     }
 
-    * {
-      box-sizing: border-box;
-    }
-
+    /* ═══════════════════════════════════════════════
+       RESET & BASE
+    ═══════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
     body {
-      margin: 0;
+      font-family: var(--font-sans);
+      background: var(--bg-deepest);
+      color: var(--text-primary);
       min-height: 100vh;
-      background:
-        radial-gradient(circle at 18% 12%, rgba(67, 217, 255, 0.12), transparent 27rem),
-        radial-gradient(circle at 72% 3%, rgba(255, 200, 87, 0.10), transparent 20rem),
-        linear-gradient(135deg, #020604 0%, var(--turf-black) 38%, var(--stand-black) 100%);
-      color: var(--chalk);
-      font-family: "Aptos", "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      letter-spacing: 0;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+    button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+    button:focus-visible { outline: 2px solid var(--green-neon); outline-offset: 2px; }
+    ::selection { background: var(--green-mid); color: white; }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-deepest); }
+    ::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--green-bright); }
+
+    /* ═══════════════════════════════════════════════
+       BACKGROUND EFFECTS
+    ═══════════════════════════════════════════════ */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: transparent;
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: transparent;
+      pointer-events: none;
+      z-index: 0;
     }
 
-    button {
-      font: inherit;
-    }
-
-    button:focus-visible {
-      outline: 2px solid var(--stud-amber);
-      outline-offset: 3px;
-    }
-
+    /* ═══════════════════════════════════════════════
+       LAYOUT
+    ═══════════════════════════════════════════════ */
     .shell {
-      width: min(1520px, calc(100% - 32px));
+      position: relative;
+      z-index: 1;
+      max-width: 1480px;
       margin: 0 auto;
-      padding: 28px 0 42px;
+      padding: 24px 20px 60px;
     }
+    @media (min-width: 768px) { .shell { padding: 32px 28px 60px; } }
 
-    .topbar {
+    /* ═══════════════════════════════════════════════
+       HEADER
+    ═══════════════════════════════════════════════ */
+    .header {
       display: grid;
-      grid-template-columns: minmax(0, 0.9fr) minmax(360px, 0.7fr) auto;
-      gap: 24px;
-      align-items: center;
-      padding: 22px;
-      border: 1px solid rgba(233, 240, 223, 0.14);
-      border-radius: var(--radius);
-      background:
-        linear-gradient(180deg, rgba(17, 24, 33, 0.92), rgba(5, 11, 10, 0.92));
-      box-shadow: var(--shadow);
+      grid-template-columns: 1fr;
+      gap: 20px;
+      padding: 28px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      background: var(--bg-card);
+      box-shadow: var(--shadow-card);
       position: relative;
       overflow: hidden;
     }
-
-    .topbar::before {
-      content: "";
+    @media (min-width: 1024px) {
+      .header { grid-template-columns: 1.1fr 320px 260px; gap: 24px; padding: 36px; }
+    }
+    .header::before {
+      content: '';
       position: absolute;
-      inset: 0;
-      background:
-        linear-gradient(90deg, transparent, rgba(67, 217, 255, 0.07), transparent),
-        repeating-linear-gradient(90deg, rgba(233,240,223,0.025) 0 1px, transparent 1px 72px);
+      top: 0; right: 0;
+      width: 50%; height: 100%;
+      background: transparent;
       pointer-events: none;
     }
 
-    .hero-copy,
-    .status-card,
-    .pitch-signature {
-      position: relative;
-      z-index: 1;
-    }
-
-    .eyebrow {
-      color: var(--stud-amber);
-      font-size: 0.76rem;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    .hero { position: relative; z-index: 1; }
+    .badge-live {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      font-family: var(--font-mono);
+      font-size: 9px;
       font-weight: 800;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
-      margin-bottom: 8px;
+      color: var(--green-neon);
+      background: var(--bg-deepest);
+      border: 1px solid rgba(0,230,77,0.25);
+      border-radius: 20px;
+      margin-bottom: 14px;
+    }
+    .badge-live::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green-neon);
+      box-shadow: 0 0 8px var(--green-neon);
+      animation: pulse-dot 1.8s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 0.4; transform: scale(0.8); }
+      50% { opacity: 1; transform: scale(1.3); }
     }
 
     h1 {
-      margin: 0;
-      max-width: 640px;
-      font-family: Impact, Haettenschweiler, "Arial Narrow Bold", "Arial Black", sans-serif;
-      font-size: clamp(2.15rem, 5.2vw, 5.2rem);
+      font-family: var(--font-display);
+      font-size: clamp(28px, 5vw, 52px);
       font-weight: 900;
-      line-height: 0.88;
-      letter-spacing: 0.01em;
+      line-height: 0.95;
+      letter-spacing: -0.02em;
       text-transform: uppercase;
+      color: var(--text-primary);
     }
-
     .subtitle {
-      margin: 10px 0 0;
-      color: var(--chalk-dim);
-      max-width: 760px;
-      line-height: 1.55;
-      font-size: 0.98rem;
+      margin-top: 12px;
+      color: var(--text-secondary);
+      font-size: 13px;
+      line-height: 1.7;
+      max-width: 520px;
     }
 
-    .pitch-signature {
-      min-height: 230px;
-      padding: 12px;
-      border: 1px solid rgba(233, 240, 223, 0.13);
-      border-radius: var(--radius);
-      background: rgba(1, 7, 5, 0.36);
-      transform: rotate(-2deg);
-      box-shadow: inset 0 0 60px rgba(67, 217, 255, 0.05);
-    }
-
-    .pitch-field {
+    /* Pitch SVG Box */
+    .pitch-box {
       position: relative;
-      height: 206px;
-      overflow: hidden;
-      border: 1px solid rgba(233, 240, 223, 0.42);
-      border-radius: 4px;
-      background:
-        linear-gradient(90deg, rgba(233,240,223,0.20) 0 1px, transparent 1px 50%, rgba(233,240,223,0.20) 50% calc(50% + 1px), transparent calc(50% + 1px)),
-        repeating-linear-gradient(90deg, rgba(54, 212, 122, 0.10) 0 34px, rgba(67, 217, 255, 0.045) 34px 68px),
-        linear-gradient(135deg, rgba(6, 17, 13, 0.98), rgba(14, 30, 28, 0.94));
-    }
-
-    .pitch-field::before,
-    .pitch-field::after {
-      content: "";
-      position: absolute;
-      border: 1px solid rgba(233, 240, 223, 0.33);
-      pointer-events: none;
-    }
-
-    .pitch-field::before {
-      width: 92px;
-      height: 92px;
-      border-radius: 50%;
-      left: calc(50% - 46px);
-      top: calc(50% - 46px);
-    }
-
-    .pitch-field::after {
-      width: 56px;
-      height: 118px;
-      right: -1px;
-      top: 43px;
-      border-right: 0;
-    }
-
-    .pitch-left-box {
-      position: absolute;
-      width: 56px;
-      height: 118px;
-      left: -1px;
-      top: 43px;
-      border: 1px solid rgba(233, 240, 223, 0.33);
-      border-left: 0;
-    }
-
-    .pitch-path {
-      position: absolute;
-      left: 8%;
-      right: 8%;
-      top: 58%;
-      height: 2px;
-      background: linear-gradient(90deg, var(--boot-red), var(--stud-amber), var(--var-cyan));
-      box-shadow: 0 0 22px rgba(67, 217, 255, 0.32);
-      transform: skewY(-8deg);
-    }
-
-    .seed-tick {
-      position: absolute;
-      bottom: 18px;
-      width: 2px;
-      border-radius: 2px;
-      background: var(--stud-amber);
-      opacity: 0.86;
-      box-shadow: 0 0 12px rgba(255, 200, 87, 0.45);
-    }
-
-    .pitch-caption {
-      position: absolute;
-      left: 14px;
-      top: 12px;
-      color: var(--chalk);
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 0.66rem;
-      font-weight: 900;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .pitch-result {
-      position: absolute;
-      right: 12px;
-      bottom: 12px;
-      color: var(--stud-amber);
-      font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
-      font-size: 1.8rem;
-      line-height: 1;
-      text-transform: uppercase;
-    }
-
-    .status-card {
-      min-width: 260px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      background: var(--bg-deepest);
       padding: 16px;
-      border: 1px solid rgba(255, 200, 87, 0.28);
-      border-radius: var(--radius);
-      background: rgba(3, 8, 14, 0.74);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 140px;
+      overflow: hidden;
+    }
+    .pitch-box svg {
+      width: 100%;
+      height: auto;
+      opacity: 0.25;
+    }
+    .pitch-box svg line, .pitch-box svg rect, .pitch-box svg circle, .pitch-box svg path {
+      stroke: var(--green-bright);
+      fill: none;
+    }
+    .pitch-label {
+      position: absolute;
+      top: 10px; left: 14px;
+      font-family: var(--font-mono);
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .pitch-dot {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--green-neon);
+      box-shadow: 0 0 16px var(--green-neon), 0 0 40px rgba(0,230,77,0.3);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+    .pitch-status {
+      position: absolute;
+      bottom: 10px; right: 14px;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 800;
+      color: var(--green-neon);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
     }
 
-    .status-row {
+    /* Telemetry Card */
+    .telemetry {
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      background: var(--bg-card);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+      z-index: 1;
+    }
+    .tele-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .tele-label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .tele-online {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 800;
+      color: var(--text-primary);
+      text-transform: uppercase;
+    }
+    .tele-online::before {
+      content: '';
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--green-neon);
+      box-shadow: 0 0 6px var(--green-neon);
+    }
+    .tele-row {
       display: flex;
       justify-content: space-between;
-      gap: 18px;
-      margin-top: 10px;
-      color: var(--chalk-dim);
-      font-size: 0.84rem;
+      font-size: 12px;
     }
+    .tele-row span { color: var(--text-muted); }
+    .tele-row strong { color: var(--text-primary); font-family: var(--font-mono); font-size: 11px; font-weight: 700; }
+    .tele-row .accent { color: var(--green-bright); }
 
-    .status-row strong {
-      color: var(--chalk);
-    }
-
-    .pulse {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      color: var(--grass);
-      font-weight: 800;
-      font-size: 0.82rem;
-    }
-
-    .pulse::before {
-      content: "";
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--grass);
-      box-shadow: 0 0 18px var(--grass);
-      animation: blink 1.3s infinite;
-    }
-
-    @keyframes blink {
-      0%, 100% { opacity: 0.45; transform: scale(0.9); }
-      50% { opacity: 1; transform: scale(1.2); }
-    }
-
+    /* ═══════════════════════════════════════════════
+       CONTROLS
+    ═══════════════════════════════════════════════ */
     .controls {
       display: flex;
       flex-wrap: wrap;
       gap: 12px;
       align-items: center;
       justify-content: space-between;
-      margin: 20px 0;
+      margin: 24px 0;
     }
-
     .tabs {
       display: flex;
-      gap: 8px;
-      padding: 6px;
-      border: 1px solid rgba(233, 240, 223, 0.13);
-      border-radius: var(--radius);
-      background: rgba(4, 10, 8, 0.82);
+      gap: 4px;
+      padding: 5px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      background: var(--bg-card);
     }
-
     .tab {
-      border: 0;
-      border-radius: 4px;
-      color: var(--chalk-dim);
-      background: transparent;
-      padding: 10px 14px;
-      cursor: pointer;
-      transition: 180ms ease;
+      padding: 10px 20px;
+      font-family: var(--font-mono);
+      font-size: 11px;
       font-weight: 800;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 0.82rem;
-      letter-spacing: 0.02em;
-      white-space: nowrap;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
     }
-
-    .tab:hover {
-      color: var(--chalk);
-      background: rgba(233, 240, 223, 0.07);
-    }
-
+    .tab:hover { color: var(--text-secondary); background: var(--bg-hover); }
     .tab.active {
-      color: #090d12;
-      background: linear-gradient(135deg, var(--stud-amber), var(--var-cyan));
-      box-shadow: 0 0 24px rgba(255, 200, 87, 0.18);
+      color: var(--bg-deepest);
+      background: var(--green-bright);
+      border-color: var(--green-bright);
+      box-shadow: var(--glow-sm);
     }
 
-    .simulate-btn {
-      border: 1px solid rgba(255, 200, 87, 0.45);
-      border-radius: 4px;
-      color: #0b0d0a;
-      background: linear-gradient(135deg, var(--stud-amber), #f8f3d2);
-      padding: 11px 16px;
-      font-weight: 900;
-      cursor: pointer;
-      transition: 180ms ease;
-      box-shadow: 0 0 30px rgba(255, 200, 87, 0.14);
+    .btn-simulate {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--bg-deepest);
+      background: var(--green-bright);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--glow-md);
+      transition: all 0.25s ease;
     }
-
-    .simulate-btn:hover {
+    .btn-simulate:hover {
       transform: translateY(-1px);
-      box-shadow: 0 0 34px rgba(255, 200, 87, 0.22);
+      box-shadow: var(--glow-lg);
     }
+    .btn-simulate:active { transform: scale(0.97); }
+    .btn-simulate:disabled { opacity: 0.5; cursor: wait; transform: none; }
+    .btn-simulate svg { width: 14px; height: 14px; fill: currentColor; }
 
-    .simulate-btn:disabled {
-      opacity: 0.65;
-      cursor: wait;
-      transform: none;
-    }
-
-    .view {
-      display: none;
-    }
-
-    .view.active {
-      display: block;
-      animation: viewIn 260ms ease;
-    }
-
-    @keyframes viewIn {
-      from { opacity: 0; transform: translateY(8px); }
+    /* ═══════════════════════════════════════════════
+       VIEWS
+    ═══════════════════════════════════════════════ */
+    .view { display: none; }
+    .view.active { display: block; animation: fadeSlideIn 0.3s ease; }
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(6px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
-    .grid {
+    .loading-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 300px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      background: var(--bg-card);
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      border: 3px solid var(--border-mid);
+      border-top-color: var(--green-neon);
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-screen strong {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .loading-screen p { color: var(--text-muted); font-size: 12px; margin-top: 6px; }
+
+    /* ═══════════════════════════════════════════════
+       GRID & PANELS
+    ═══════════════════════════════════════════════ */
+    .grid-main {
       display: grid;
-      grid-template-columns: 1.05fr 0.95fr;
-      gap: 18px;
-      align-items: start;
+      grid-template-columns: 1fr;
+      gap: 24px;
     }
-
+    @media (min-width: 1024px) {
+      .grid-main { grid-template-columns: 1.15fr 0.85fr; }
+    }
     .panel {
-      border: 1px solid rgba(233, 240, 223, 0.13);
-      border-radius: var(--radius);
-      background: linear-gradient(180deg, rgba(17, 24, 33, 0.9), rgba(5, 11, 10, 0.92));
-      box-shadow: var(--shadow);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      background: var(--bg-card);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
     }
-
     .panel-head {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      gap: 14px;
-      padding: 16px 18px;
-      border-bottom: 1px solid rgba(233, 240, 223, 0.11);
+      justify-content: space-between;
+      gap: 12px;
+      padding: 22px 24px;
+      border-bottom: 1px solid var(--border-subtle);
     }
-
     .panel-title {
-      margin: 0;
-      font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
-      font-size: 1.25rem;
+      font-family: var(--font-display);
+      font-size: 20px;
       font-weight: 900;
       text-transform: uppercase;
-      letter-spacing: 0.02em;
+      letter-spacing: -0.01em;
     }
-
     .panel-kicker {
-      color: var(--chalk-dim);
-      font-size: 0.8rem;
+      font-family: var(--font-mono);
+      font-size: 9px;
       font-weight: 700;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-top: 3px;
     }
-
-    .leaderboard {
-      padding: 10px 16px 16px;
-    }
-
-    .team-row {
-      display: grid;
-      grid-template-columns: 34px minmax(120px, 180px) minmax(140px, 1fr) 62px;
-      gap: 12px;
-      align-items: center;
-      padding: 12px 0;
-      border-bottom: 1px solid rgba(233, 240, 223, 0.07);
-    }
-
-    .team-row:last-child {
-      border-bottom: 0;
-    }
-
-    .rank {
-      color: var(--stud-amber);
-      font-weight: 900;
-      font-variant-numeric: tabular-nums;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    }
-
-    .team {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      min-width: 0;
-      font-weight: 850;
-    }
-
-    .badge {
-      width: 28px;
-      height: 28px;
-      flex: 0 0 28px;
-      display: grid;
-      place-items: center;
-      border-radius: 50%;
-      background: linear-gradient(135deg, rgba(39, 215, 255, 0.22), rgba(57, 255, 136, 0.18));
-      border: 1px solid rgba(233, 240, 223, 0.24);
-      color: var(--chalk);
-      font-size: 0.72rem;
-      font-weight: 900;
-    }
-
-    .team-name {
-      overflow: hidden;
-      text-overflow: ellipsis;
+    .panel-kicker.green { color: var(--green-bright); }
+    .panel-tag {
+      padding: 4px 10px;
+      font-family: var(--font-mono);
+      font-size: 8px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+      border: 1px solid var(--border-subtle);
+      border-radius: 4px;
+      background: var(--bg-deepest);
       white-space: nowrap;
     }
 
-    .bar-shell {
-      height: 12px;
-      border-radius: 999px;
-      overflow: hidden;
-      background: rgba(233, 240, 223, 0.08);
-      border: 1px solid rgba(233, 240, 223, 0.11);
+    /* ═══════════════════════════════════════════════
+       LEADERBOARD
+    ═══════════════════════════════════════════════ */
+    .leaderboard { padding: 8px 20px 20px; }
+    .team-row {
+      display: grid;
+      grid-template-columns: 32px 1fr minmax(100px, 200px) 64px;
+      gap: 12px;
+      align-items: center;
+      padding: 14px 8px;
+      border-bottom: 1px solid rgba(26,43,34,0.5);
+      border-radius: var(--radius-sm);
+      transition: background 0.15s ease;
     }
+    .team-row:last-child { border-bottom: none; }
+    .team-row:hover { background: var(--bg-hover); }
 
-    .bar {
+    .rank {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--green-neon);
+      font-variant-numeric: tabular-nums;
+    }
+    .team-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .team-badge {
+      width: 32px; height: 22px;
+      border-radius: 3px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-mid);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .team-badge img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .team-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: color 0.15s;
+    }
+    .team-row:hover .team-name { color: var(--green-neon); }
+
+    .bar-track {
+      height: 8px;
+      border-radius: 100px;
+      background: var(--bg-deepest);
+      border: 1px solid var(--border-subtle);
+      overflow: hidden;
+    }
+    .bar-fill {
       height: 100%;
       width: 0%;
       border-radius: inherit;
-      background: linear-gradient(90deg, var(--boot-red), var(--stud-amber), var(--var-cyan));
-      box-shadow: 0 0 20px rgba(255, 200, 87, 0.22);
-      transition: width 900ms cubic-bezier(0.16, 1, 0.3, 1);
+      background: var(--green-neon);
+      box-shadow: var(--glow-sm);
+      transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
     }
-
-    .percent {
+    .pct {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 800;
       text-align: right;
-      color: var(--chalk);
-      font-weight: 900;
+      color: var(--text-primary);
       font-variant-numeric: tabular-nums;
     }
 
-    .metric-grid {
+    @media (max-width: 640px) {
+      .team-row { grid-template-columns: 28px 1fr 56px; }
+      .team-row .bar-track { display: none; }
+    }
+
+    /* ═══════════════════════════════════════════════
+       METRICS
+    ═══════════════════════════════════════════════ */
+    .metrics-grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
       gap: 12px;
+      padding: 20px;
+    }
+    .metric-card {
       padding: 16px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      background: var(--bg-deepest);
     }
-
-    .metric {
-      padding: 14px;
-      border-radius: var(--radius);
-      border: 1px solid rgba(233, 240, 223, 0.12);
-      background: rgba(3, 8, 7, 0.72);
+    .metric-card .label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
     }
-
-    .metric span {
+    .metric-card .value {
       display: block;
-      color: var(--chalk-dim);
-      font-size: 0.78rem;
+      margin-top: 8px;
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--text-primary);
+    }
+    .metric-card .value.green { color: var(--green-neon); }
+
+    /* ═══════════════════════════════════════════════
+       MINI TABLE
+    ═══════════════════════════════════════════════ */
+    .section-divider {
+      padding: 14px 24px;
+      border-top: 1px solid var(--border-subtle);
+      border-bottom: 1px solid var(--border-subtle);
+      background: rgba(6,11,8,0.5);
+    }
+    .section-divider h3 {
+      font-family: var(--font-display);
+      font-size: 12px;
       font-weight: 800;
       text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-secondary);
     }
-
-    .metric strong {
-      display: block;
-      margin-top: 7px;
-      font-size: 1.5rem;
-      color: var(--chalk);
-    }
-
     .mini-table {
       width: 100%;
-      padding: 0 16px 16px;
       border-collapse: collapse;
     }
-
-    .mini-table th,
-    .mini-table td {
-      padding: 11px 8px;
-      border-bottom: 1px solid rgba(233, 240, 223, 0.07);
+    .mini-table th, .mini-table td {
+      padding: 12px 20px;
+      border-bottom: 1px solid rgba(26,43,34,0.4);
+      font-size: 12px;
       text-align: left;
-      font-size: 0.86rem;
     }
-
     .mini-table th {
-      color: var(--chalk-dim);
-      font-size: 0.74rem;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      background: rgba(6,11,8,0.3);
+    }
+    .mini-table td { color: var(--text-secondary); }
+    .mini-table td:first-child { color: var(--text-primary); font-weight: 700; }
+    .mini-table td:last-child { text-align: right; color: var(--green-neon); font-family: var(--font-mono); font-weight: 800; }
+    .mini-table th:last-child { text-align: right; }
+    .mini-table tr:hover td { background: var(--bg-hover); }
+    .mini-table tr:last-child td { border-bottom: none; }
+    .tbl-badge {
+      display: inline-block;
+      width: 22px; height: 15px;
+      border-radius: 2px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      overflow: hidden;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    .tbl-badge img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
     }
 
-    .mini-table td:last-child,
-    .mini-table th:last-child {
-      text-align: right;
-    }
-
+    /* ═══════════════════════════════════════════════
+       BRACKET
+    ═══════════════════════════════════════════════ */
+    /* ═══════════════════════════════════════════════
+       BRACKET
+    ═══════════════════════════════════════════════ */
     .bracket-wrap {
-      position: relative;
-      border: 1px solid rgba(233, 240, 223, 0.13);
-      border-radius: var(--radius);
-      background:
-        linear-gradient(180deg, rgba(17, 24, 33, 0.78), rgba(5, 11, 10, 0.93)),
-        repeating-linear-gradient(0deg, rgba(233,240,223,0.022) 0 1px, transparent 1px 44px);
-      box-shadow: var(--shadow);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      background: var(--bg-card);
+      box-shadow: var(--shadow-card);
       overflow: hidden;
     }
-
     .bracket-toolbar {
       display: flex;
+      flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
       gap: 12px;
-      padding: 14px 16px;
-      border-bottom: 1px solid rgba(233, 240, 223, 0.11);
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border-subtle);
     }
-
-    .bracket-toolbar small {
-      color: var(--chalk-dim);
-      line-height: 1.4;
+    .bracket-toolbar p { color: var(--text-muted); font-size: 12px; margin-top: 4px; line-height: 1.5; }
+    .bracket-champion-tag {
+      padding: 6px 14px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--green-neon);
+      border: 1px solid rgba(0,230,77,0.25);
+      border-radius: var(--radius-sm);
+      background: rgba(0,230,77,0.04);
+      box-shadow: var(--glow-sm);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
     }
+    .bracket-scroll { overflow-x: auto; overflow-y: hidden; padding: 24px 20px 32px; }
 
-    .bracket-scroll {
-      overflow: auto;
-      padding: 20px;
-    }
-
-    .bracket {
-      min-width: 1180px;
-      display: grid;
-      grid-template-columns: 210px 210px 210px 210px 210px 210px;
-      gap: 28px;
+    /* ── Centered symmetric bracket ── */
+    .bkt {
+      display: flex;
       align-items: stretch;
+      min-width: 1520px;
+      gap: 0;
+      transition: all 0.3s ease;
+    }
+    .bkt-half {
+      display: flex;
+      flex: 1;
+      gap: 0;
+    }
+    .bkt-left  { flex-direction: row; }
+    .bkt-right { flex-direction: row; }
+
+    .bkt-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-width: 220px;
+      padding: 0 12px;
+      gap: 20px;
+      position: relative;
     }
 
-    .round {
+    /* Round column */
+    .bkt-col {
       display: flex;
       flex-direction: column;
       justify-content: space-around;
-      gap: 16px;
-      min-height: 1120px;
+      min-width: 175px;
+      padding: 0 8px;
       position: relative;
     }
 
-    .round.r16 { padding: 32px 0; }
-    .round.qf { padding: 96px 0; }
-    .round.sf { padding: 224px 0; }
-    .round.final { padding: 432px 0; }
-    .round.champion-round { padding: 510px 0; }
-
-    .round-title {
+    .bkt-col-header {
+      text-align: center;
+      padding: 6px 10px;
+      margin-bottom: 8px;
+      font-family: var(--font-display);
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--green-neon);
+      background: var(--bg-deepest);
+      border: 1px solid var(--border-subtle);
+      border-radius: 2px;
       position: sticky;
       top: 0;
       z-index: 5;
-      margin-bottom: 2px;
-      padding: 8px 10px;
-      border-radius: 6px;
-      color: var(--stud-amber);
-      background: rgba(4, 9, 8, 0.88);
-      border: 1px solid rgba(255, 200, 87, 0.18);
-      font-size: 0.74rem;
-      font-weight: 900;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      transform: skewX(-8deg);
     }
 
+    /* Match pair wrapper */
+    .bkt-pair {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 12px;
+      flex: 1;
+      position: relative;
+    }
+
+    /* ── Match card ── */
     .match {
       position: relative;
-      padding: 9px;
-      border: 1px solid rgba(233, 240, 223, 0.14);
-      border-radius: var(--radius);
-      background:
-        linear-gradient(90deg, rgba(233,240,223,0.045) 0 1px, transparent 1px),
-        linear-gradient(180deg, rgba(13, 21, 26, 0.98), rgba(5, 10, 9, 0.98));
-      transition: transform 170ms ease, border-color 170ms ease, box-shadow 170ms ease;
-      cursor: default;
+      border: 1px solid var(--border-subtle);
+      background: linear-gradient(135deg, #070e0b 0%, #0c1812 100%);
+      transform: skewX(-6deg);
+      border-radius: 2px;
+      transition: border-color 0.25s, box-shadow 0.25s, transform 0.2s;
     }
-
-    .match::after {
-      content: "";
-      position: absolute;
-      top: 50%;
-      left: 100%;
-      width: 28px;
-      height: 1px;
-      background: var(--line);
+    .match-inner {
+      transform: skewX(6deg); /* Un-skew card contents */
+      padding: 8px 10px;
     }
-
-    .champion-card::after,
-    .champion-round .match::after {
-      display: none;
-    }
-
     .match:hover {
-      transform: scale(1.025);
-      border-color: rgba(255, 200, 87, 0.58);
-      box-shadow: 0 0 28px rgba(255, 200, 87, 0.16);
+      border-color: var(--green-neon);
+      box-shadow: 0 0 15px rgba(0, 230, 77, 0.25);
+      transform: scale(1.04) skewX(-6deg);
       z-index: 10;
     }
-
-    .match:hover .tooltip {
-      opacity: 1;
-      transform: translate(-50%, -8px);
-      pointer-events: auto;
-    }
-
-    .match-meta {
+    .m-head {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 7px;
-      color: var(--chalk-dim);
-      font-size: 0.68rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    }
-
-    .side {
-      display: grid;
-      grid-template-columns: 24px minmax(0, 1fr) 48px;
-      gap: 8px;
       align-items: center;
-      padding: 7px 6px;
-      border-radius: 6px;
-      color: var(--chalk-dim);
+      margin-bottom: 6px;
+      border-bottom: 1px solid rgba(26,43,34,0.3);
+      padding-bottom: 4px;
+    }
+    .m-id {
+      font-family: var(--font-mono);
+      font-size: 7px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .m-status {
+      font-family: var(--font-display);
+      font-size: 7px;
+      font-weight: 800;
+      color: var(--green-bright);
+      letter-spacing: 0.05em;
     }
 
-    .side + .side {
-      margin-top: 4px;
+    .m-team {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 6px;
+      border-radius: 2px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      transition: all 0.15s ease;
+      position: relative;
     }
-
-    .side.winner {
-      color: var(--chalk);
-      background: rgba(255, 200, 87, 0.08);
-      box-shadow: inset 2px 0 0 var(--stud-amber);
+    .m-team + .m-team {
+      margin-top: 3px;
     }
-
-    .flag {
-      width: 24px;
-      height: 18px;
-      display: grid;
-      place-items: center;
-      border-radius: 3px;
-      background: linear-gradient(135deg, rgba(67, 217, 255, 0.22), rgba(255, 200, 87, 0.16));
-      border: 1px solid rgba(233, 240, 223, 0.22);
-      font-size: 0.58rem;
-      font-weight: 900;
-      color: var(--chalk);
+    .m-team.w {
+      color: var(--text-primary);
+      font-weight: 800;
     }
-
-    .side-name {
+    .m-flag {
+      width: 20px; height: 14px;
+      border-radius: 1px;
+      overflow: hidden;
+      flex-shrink: 0;
+      background: var(--bg-deepest);
+      border: 1px solid rgba(26,43,34,0.5);
+    }
+    .m-flag img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .m-name {
+      flex: 1;
+      font-family: var(--font-display);
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      white-space: nowrap;
-      font-weight: 850;
-      font-size: 0.82rem;
     }
-
-    .side-prob {
-      text-align: right;
-      font-variant-numeric: tabular-nums;
-      font-size: 0.72rem;
+    .m-pct {
+      font-family: var(--font-mono);
+      font-size: 8px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-right: 4px;
+    }
+    .m-team.w .m-pct {
+      color: var(--green-bright);
+    }
+    .m-score-val {
+      font-family: var(--font-display);
+      font-size: 12px;
       font-weight: 900;
+      color: var(--text-primary);
+      width: 20px;
+      height: 20px;
+      background: #111e16;
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 1px;
+    }
+    .m-team.w .m-score-val {
+      background: var(--green-neon);
+      color: var(--bg-deepest);
+      border-color: var(--green-neon);
+      box-shadow: var(--glow-sm);
     }
 
-    .tooltip {
+    /* Tooltip */
+    .match .tip {
       position: absolute;
+      bottom: calc(100% + 8px);
       left: 50%;
-      bottom: 100%;
-      min-width: 190px;
+      transform: translateX(-50%) translateY(4px) skewX(6deg); /* Compensate parent skew */
+      width: 220px;
+      padding: 10px 12px;
+      background: #060b09;
+      border: 1px solid var(--green-bright);
+      border-radius: 2px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+      font-size: 10px;
+      color: var(--text-secondary);
+      line-height: 1.6;
       opacity: 0;
-      transform: translate(-50%, 0);
-      padding: 9px 10px;
-      border-radius: 6px;
-      border: 1px solid rgba(255, 200, 87, 0.28);
-      background: rgba(3, 8, 14, 0.96);
-      color: var(--chalk);
-      box-shadow: 0 14px 38px rgba(0,0,0,0.45);
-      transition: 150ms ease;
       pointer-events: none;
-      font-size: 0.76rem;
-      z-index: 20;
+      transition: opacity 0.15s, transform 0.15s;
+      z-index: 30;
+    }
+    .match:hover .tip {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0) skewX(6deg);
+    }
+    .tip strong { color: var(--green-neon); }
+
+    /* ── Path Highlight Hover Styles ── */
+    .bkt.highlight-active .m-team {
+      opacity: 0.25;
+    }
+    .bkt.highlight-active .m-team.highlighted {
+      opacity: 1;
+      background: rgba(0, 230, 77, 0.08);
+      color: var(--text-primary);
+    }
+    .bkt.highlight-active .m-team.highlighted .m-name {
+      color: var(--green-neon);
+      text-shadow: 0 0 4px rgba(0, 230, 77, 0.4);
     }
 
-    .tooltip strong {
-      color: var(--stud-amber);
+    /* ── Connector lines (glowing) ── */
+    .bkt-left .bkt-pair::after {
+      content: '';
+      position: absolute;
+      right: -8px;
+      top: 25%; bottom: 25%;
+      width: 2px;
+      background: var(--border-mid);
+    }
+    .bkt-left .match::after {
+      content: '';
+      position: absolute;
+      right: -8px;
+      top: 50%;
+      width: 8px;
+      height: 2px;
+      background: var(--border-mid);
+    }
+    .bkt-left .bkt-pair::before {
+      content: '';
+      position: absolute;
+      right: -16px;
+      top: 50%;
+      width: 8px;
+      height: 2px;
+      background: var(--border-mid);
+    }
+    .bkt-right .bkt-pair::after {
+      content: '';
+      position: absolute;
+      left: -8px;
+      top: 25%; bottom: 25%;
+      width: 2px;
+      background: var(--border-mid);
+    }
+    .bkt-right .match::after {
+      content: '';
+      position: absolute;
+      left: -8px;
+      top: 50%;
+      width: 8px;
+      height: 2px;
+      background: var(--border-mid);
+    }
+    .bkt-right .bkt-pair::before {
+      content: '';
+      position: absolute;
+      left: -16px;
+      top: 50%;
+      width: 8px;
+      height: 2px;
+      background: var(--border-mid);
+    }
+    
+    /* Interactive Hover Connector Light-up */
+    .match:hover::after {
+      background: var(--green-neon) !important;
+      box-shadow: 0 0 8px var(--green-neon);
     }
 
-    .champion-card {
-      min-height: 120px;
-      display: grid;
-      place-items: center;
+    /* No connectors on single-match slots or the center */
+    .bkt-center .match::after,
+    .bkt-solo .bkt-pair::after,
+    .bkt-solo .bkt-pair::before,
+    .bkt-solo .match::after { display: none; }
+
+    /* ── FUT Shield Card (FIFA Ultimate Team style) ── */
+    .fut-card {
+      position: relative;
+      width: 190px;
+      height: 260px;
+      background: linear-gradient(135deg, #0e1a13 0%, #050b07 100%);
+      border: 2px solid #ffd700;
+      clip-path: polygon(0 0, 100% 0, 100% 75%, 50% 100%, 0 75%);
+      box-shadow: 0 0 25px rgba(255, 215, 0, 0.35);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 20px 12px;
+      color: var(--text-primary);
       text-align: center;
-      border-color: rgba(255, 207, 90, 0.42);
-      background:
-        radial-gradient(circle at 50% 0%, rgba(255, 200, 87, 0.22), transparent 80px),
-        linear-gradient(180deg, rgba(28, 25, 15, 0.98), rgba(7, 9, 7, 0.98));
-      box-shadow: 0 0 34px rgba(255, 207, 90, 0.12);
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
     }
-
-    .champion-label {
-      color: var(--stud-amber);
-      font-size: 0.72rem;
+    .fut-card:hover {
+      transform: scale(1.06) rotate(1deg);
+      box-shadow: 0 0 35px rgba(255, 215, 0, 0.55);
+    }
+    .fut-header {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      font-family: var(--font-display);
+      padding: 0 10px;
+      margin-bottom: 10px;
+    }
+    .fut-rating {
+      font-size: 20px;
       font-weight: 900;
-      text-transform: uppercase;
+      color: #ffd700;
+      line-height: 1;
+    }
+    .fut-pos {
+      font-size: 9px;
+      font-weight: 800;
+      color: var(--text-muted);
       letter-spacing: 0.1em;
+      line-height: 1.5;
     }
-
-    .champion-name {
-      margin-top: 8px;
-      font-size: 1.05rem;
-      font-weight: 950;
+    .fut-badge {
+      position: relative;
+      width: 60px;
+      height: 42px;
+      margin-bottom: 8px;
     }
-
-    .loading {
-      display: grid;
-      place-items: center;
-      min-height: 360px;
-      border: 1px solid rgba(233, 240, 223, 0.13);
-      border-radius: var(--radius);
-      background: rgba(5, 11, 10, 0.78);
-      color: var(--chalk-dim);
-      text-align: center;
-      padding: 30px;
+    .fut-flag {
+      width: 100%;
+      height: 100%;
+      border-radius: 2px;
+      overflow: hidden;
+      border: 1.5px solid #ffd700;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
     }
-
-    .loader {
-      width: 58px;
-      height: 58px;
+    .fut-flag img { width: 100%; height: 100%; object-fit: cover; }
+    .fut-trophy-overlay {
+      position: absolute;
+      bottom: -6px;
+      right: -6px;
+      width: 24px;
+      height: 24px;
+      background: #ffd700;
       border-radius: 50%;
-      border: 3px solid rgba(233, 240, 223, 0.16);
-      border-top-color: var(--stud-amber);
-      animation: spin 850ms linear infinite;
-      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #020604;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    }
+    .fut-trophy-overlay svg {
+      width: 14px;
+      height: 14px;
+    }
+    .fut-team-name {
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 900;
+      color: var(--text-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+      border-bottom: 1.5px solid rgba(255, 215, 0, 0.25);
+      padding-bottom: 4px;
+      width: 90%;
+    }
+    .fut-stats {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 0 4px;
+    }
+    .fut-stat-row {
+      display: flex;
+      justify-content: space-around;
+      width: 100%;
+    }
+    .fut-stat {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 9px;
+    }
+    .fut-stat span {
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .fut-stat strong {
+      font-family: var(--font-display);
+      color: #ffd700;
+      font-weight: 800;
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+    /* Center final match card is slightly bigger */
+    .bkt-center .match {
+      padding: 2px;
+      border-color: rgba(255,215,0,0.25);
+      min-width: 200px;
+    }
+    .bkt-center .match-inner {
+      padding: 10px 14px;
+    }
+    .bkt-center .m-team { font-size: 12px; }
+    .bkt-center .m-flag { width: 24px; height: 16px; }
+    .bkt-center .m-score-val { font-size: 13px; width: 22px; height: 22px; }
+
+    /* Simulation flash animation */
+    @keyframes borderFlash {
+      0%, 100% { border-color: var(--border-subtle); }
+      50% { border-color: var(--green-neon); }
+    }
+    .is-simulating .match { animation: borderFlash 200ms infinite; }
+
+    /* Slanted layout elements */
+    .tabs {
+      transform: skewX(-10deg);
+    }
+    .tab {
+      transform: skewX(10deg); /* Counter skew text but keep tab container skewed */
+    }
+    .btn-simulate {
+      transform: skewX(-10deg);
+      border-radius: 2px !important;
+    }
+    .btn-simulate > * {
+      transform: skewX(10deg);
     }
 
-    @keyframes flash {
-      0%, 100% { filter: none; }
-      50% { filter: drop-shadow(0 0 16px rgba(255, 200, 87, 0.46)); }
+    /* ═══════════════════════════════════════════════
+       RESPONSIVE
+    ═══════════════════════════════════════════════ */
+    @media (max-width: 640px) {
+      .controls { flex-direction: column; align-items: stretch; }
+      .tabs, .btn-simulate { width: 100%; justify-content: center; }
+      .tab { flex: 1; text-align: center; padding: 10px 8px; font-size: 10px; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
     }
-
-    .is-simulating .match {
-      animation: flash 260ms infinite;
-    }
-
-    @media (max-width: 920px) {
-      .topbar,
-      .grid {
-        grid-template-columns: 1fr;
-      }
-
-      .pitch-signature {
-        transform: none;
-        min-height: 190px;
-      }
-
-      .pitch-field {
-        height: 170px;
-      }
-
-      h1 {
-        font-size: clamp(2rem, 14vw, 3.6rem);
-      }
-
-      .status-card {
-        min-width: 0;
-      }
-
-      .team-row {
-        grid-template-columns: 28px minmax(100px, 1fr) 82px;
-      }
-
-      .team-row .bar-shell {
-        grid-column: 2 / -1;
-      }
-
-      .metric-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .controls {
-        align-items: stretch;
-      }
-
-      .tabs,
-      .simulate-btn {
-        width: 100%;
-      }
-
-      .tab {
-        flex: 1;
-      }
-    }
-
     @media (prefers-reduced-motion: reduce) {
-      *,
-      *::before,
-      *::after {
+      *, *::before, *::after {
         animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        scroll-behavior: auto !important;
         transition-duration: 0.01ms !important;
       }
     }
   </style>
 </head>
 <body>
-  <main class="shell">
-    <section class="topbar">
-      <div class="hero-copy">
-        <div class="eyebrow">VAR room / Monte Carlo file 2026</div>
-        <h1>Tournament control board</h1>
-        <p class="subtitle">
-          A match-path dashboard for reading 10,000 simulated World Cups: who survives the bracket, where probabilities bend, and which contender leaves the model with the trophy.
-        </p>
+
+<main class="shell">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="hero">
+      <div class="badge-live">VAR Room — Monte Carlo 2026</div>
+      <h1>Tournament<br>Control Board</h1>
+      <p class="subtitle">
+        Parsing 10,000 simulated World Cup tournaments. GNN graph embeddings and Bayesian weight distributions reveal the path to the championship.
+      </p>
+    </div>
+
+    <div class="pitch-box">
+      <div class="pitch-label">Pitch Simulation Matrix</div>
+      <div class="pitch-dot"></div>
+      <svg viewBox="0 0 120 80" stroke-width="0.7">
+        <rect x="0.5" y="0.5" width="119" height="79"/>
+        <line x1="60" y1="0.5" x2="60" y2="79.5"/>
+        <circle cx="60" cy="40" r="10"/>
+        <rect x="0.5" y="20" width="15" height="40"/>
+        <rect x="104.5" y="20" width="15" height="40"/>
+        <rect x="0.5" y="30" width="6" height="20"/>
+        <rect x="113.5" y="30" width="6" height="20"/>
+        <path d="M 15.5 32 A 10 10 0 0 1 15.5 48"/>
+        <path d="M 104.5 32 A 10 10 0 0 0 104.5 48"/>
+      </svg>
+      <div class="pitch-status" id="loadStatus">Loading...</div>
+    </div>
+
+    <div class="telemetry">
+      <div class="tele-header">
+        <span class="tele-label">Telemetry</span>
+        <span class="tele-online">Online</span>
       </div>
-      <div class="pitch-signature" aria-hidden="true">
-        <div class="pitch-field">
-          <div class="pitch-left-box"></div>
-          <div class="pitch-caption">48-team field / 32-team cut</div>
-          <div class="pitch-path"></div>
-          <div class="pitch-result">ARG 13.54</div>
-        </div>
-      </div>
-      <aside class="status-card">
-        <div class="pulse" id="loadStatus">Loading CSV mock</div>
-        <div class="status-row"><span>Source</span><strong>world_cup_2026_simulation_results.csv</strong></div>
-        <div class="status-row"><span>Teams</span><strong id="teamCount">--</strong></div>
-        <div class="status-row"><span>Model</span><strong>GNN + BNN</strong></div>
-      </aside>
-    </section>
+      <div class="tele-row"><span>Source</span><strong>results.csv</strong></div>
+      <div class="tele-row"><span>Teams</span><strong id="teamCount">--</strong></div>
+      <div class="tele-row"><span>Engine</span><strong class="accent">GNN + BNN</strong></div>
+      <div class="tele-row"><span>Iterations</span><strong>10,000 runs</strong></div>
+    </div>
+  </header>
 
-    <section class="controls">
-      <nav class="tabs" aria-label="Dashboard views">
-        <button class="tab active" data-tab="overview">Overview</button>
-        <button class="tab" data-tab="bracket">Knockout Bracket</button>
-      </nav>
-      <button class="simulate-btn" id="simulateBtn">Run Simulation</button>
-    </section>
+  <!-- CONTROLS -->
+  <section class="controls">
+    <nav class="tabs" aria-label="Dashboard views">
+      <button class="tab active" data-tab="overview">Overview</button>
+      <button class="tab" data-tab="bracket">Knockout Bracket</button>
+    </nav>
+    <button class="btn-simulate" id="simulateBtn">
+      <svg viewBox="0 0 24 24"><path d="M19 12h-2v3h-3v2h5v-5zM7 9h3V7H5v5h2V9zm14-6H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14z"/></svg>
+      <span>Run Monte Carlo Shuffle</span>
+    </button>
+  </section>
 
-    <section id="loading" class="loading">
-      <div>
-        <div class="loader"></div>
-        <strong>Parsing simulation results</strong>
-        <p>Mock-loading CSV columns: Reach R32, R16, QF, SF, Final, Win Tournament.</p>
-      </div>
-    </section>
+  <!-- LOADING -->
+  <section id="loading" class="loading-screen">
+    <div class="spinner"></div>
+    <strong>Compiling World Cup Simulations</strong>
+    <p>Aggregating 10,000 tournament paths...</p>
+  </section>
 
-    <section id="appViews" style="display:none">
-      <section class="view active" id="overview">
-        <div class="grid">
-          <article class="panel">
-            <div class="panel-head">
-              <div>
-                <h2 class="panel-title">Top 10 Tournament Favorites</h2>
-                <div class="panel-kicker">Win Tournament %</div>
-              </div>
-              <div class="panel-kicker">Animated leaderboard</div>
-            </div>
-            <div class="leaderboard" id="leaderboard"></div>
-          </article>
+  <!-- APP VIEWS -->
+  <section id="appViews" style="display:none">
 
-          <aside class="panel">
-            <div class="panel-head">
-              <div>
-                <h2 class="panel-title">Prediction Snapshot</h2>
-                <div class="panel-kicker">Simulation aggregate</div>
-              </div>
-            </div>
-            <div class="metric-grid" id="metrics"></div>
-            <table class="mini-table">
-              <thead>
-                <tr>
-                  <th>Team</th>
-                  <th>R32</th>
-                  <th>Final</th>
-                  <th>Win</th>
-                </tr>
-              </thead>
-              <tbody id="snapshotTable"></tbody>
-            </table>
-          </aside>
-        </div>
-      </section>
-
-      <section class="view" id="bracket">
-        <div class="bracket-wrap" id="bracketWrap">
-          <div class="bracket-toolbar">
+    <!-- OVERVIEW -->
+    <div class="view active" id="overview">
+      <div class="grid-main">
+        <article class="panel">
+          <div class="panel-head">
             <div>
-              <h2 class="panel-title">Interactive Knockout Tree</h2>
-              <small>Hover a match for win probability and simulated score. The bracket is horizontally scrollable.</small>
+              <div class="panel-title">Top 20 Favorites</div>
+              <div class="panel-kicker green">Win Tournament Probability</div>
             </div>
-            <div class="panel-kicker" id="bracketMeta">Settled result</div>
+            <span class="panel-tag">Live Model Matrix</span>
           </div>
-          <div class="bracket-scroll">
-            <div class="bracket" id="bracketTree"></div>
-          </div>
-        </div>
-      </section>
-    </section>
-  </main>
-
-  <script src="dashboard_data/world_cup_dashboard_data.js"></script>
-  <script>
-    const simulationResults = [{"Team":"Argentina","r32":90.68,"r16":65.79,"qf":46.61,"sf":31.81,"final":20.82,"win":13.54},{"Team":"Spain","r32":94.1,"r16":68.33,"qf":47.38,"sf":31.43,"final":20.33,"win":12.37},{"Team":"France","r32":86.14,"r16":60.12,"qf":40.5,"sf":26.28,"final":16.26,"win":9.76},{"Team":"England","r32":87.86,"r16":59.48,"qf":38.96,"sf":24.31,"final":14.61,"win":8.34},{"Team":"Portugal","r32":84.91,"r16":56.93,"qf":36.43,"sf":21.91,"final":12.76,"win":7.08},{"Team":"Netherlands","r32":80.51,"r16":51.87,"qf":31.31,"sf":17.96,"final":9.51,"win":4.98},{"Team":"Germany","r32":82.87,"r16":52.12,"qf":31.39,"sf":17.5,"final":9.23,"win":4.91},{"Team":"Brazil","r32":80.91,"r16":50.06,"qf":29.82,"sf":16.6,"final":8.76,"win":4.47},{"Team":"Belgium","r32":91.03,"r16":54.82,"qf":30.67,"sf":16.86,"final":8.77,"win":4.08},{"Team":"Colombia","r32":90.7,"r16":53.88,"qf":30.17,"sf":15.75,"final":8,"win":3.93},{"Team":"Ecuador","r32":88.29,"r16":50.05,"qf":26.53,"sf":13.18,"final":6.28,"win":2.82},{"Team":"Japan","r32":78.86,"r16":45.66,"qf":24.85,"sf":12.35,"final":6.07,"win":2.79},{"Team":"Mexico","r32":79.22,"r16":43.45,"qf":23.22,"sf":11.91,"final":5.5,"win":2.4},{"Team":"Morocco","r32":77.94,"r16":44.37,"qf":23.91,"sf":12.1,"final":5.37,"win":2.23},{"Team":"Switzerland","r32":93.15,"r16":47.14,"qf":22.9,"sf":10.77,"final":4.57,"win":1.83},{"Team":"Norway","r32":87.98,"r16":45.61,"qf":22.79,"sf":10.18,"final":4.34,"win":1.75},{"Team":"Croatia","r32":81.83,"r16":43.83,"qf":21.78,"sf":9.95,"final":4.3,"win":1.66},{"Team":"Uruguay","r32":87.66,"r16":44.82,"qf":21.85,"sf":9.18,"final":3.69,"win":1.39},{"Team":"Austria","r32":80.07,"r16":42.33,"qf":20.53,"sf":9.08,"final":3.5,"win":1.25},{"Team":"Australia","r32":76.48,"r16":36.37,"qf":16.62,"sf":6.86,"final":2.87,"win":1.07},{"Team":"Turkey","r32":84.84,"r16":40.73,"qf":18.42,"sf":7.92,"final":2.98,"win":0.96},{"Team":"Algeria","r32":62.53,"r16":32.11,"qf":14.3,"sf":5.76,"final":2.13,"win":0.75},{"Team":"Iran","r32":58.12,"r16":28.37,"qf":12.51,"sf":5.19,"final":1.99,"win":0.68},{"Team":"Canada","r32":68.61,"r16":30.91,"qf":13.1,"sf":5,"final":1.99,"win":0.6},{"Team":"Paraguay","r32":58.04,"r16":27.6,"qf":11.98,"sf":4.72,"final":1.72,"win":0.58},{"Team":"Scotland","r32":75.15,"r16":32.93,"qf":12.42,"sf":4.42,"final":1.51,"win":0.53},{"Team":"United States","r32":50.81,"r16":24.02,"qf":10.36,"sf":4.26,"final":1.59,"win":0.51},{"Team":"South Korea","r32":73.67,"r16":32.69,"qf":13.48,"sf":4.87,"final":1.67,"win":0.47},{"Team":"Senegal","r32":56.7,"r16":27.52,"qf":11.63,"sf":4.54,"final":1.68,"win":0.44},{"Team":"Ivory Coast","r32":59.21,"r16":25.38,"qf":9.51,"sf":3.58,"final":1.1,"win":0.35},{"Team":"Egypt","r32":74.27,"r16":30.22,"qf":11.16,"sf":3.52,"final":0.97,"win":0.3},{"Team":"Panama","r32":68.54,"r16":26.37,"qf":9.16,"sf":2.84,"final":0.91,"win":0.27},{"Team":"Czech Republic","r32":80.96,"r16":30.36,"qf":10.84,"sf":3.69,"final":1.03,"win":0.25},{"Team":"Uzbekistan","r32":60.63,"r16":25.71,"qf":9.56,"sf":3.29,"final":1.06,"win":0.16},{"Team":"Sweden","r32":53.77,"r16":20.02,"qf":6.46,"sf":2.1,"final":0.5,"win":0.14},{"Team":"Tunisia","r32":56.64,"r16":19.06,"qf":5.55,"sf":1.51,"final":0.33,"win":0.12},{"Team":"New Zealand","r32":42.23,"r16":15.21,"qf":4.52,"sf":1.32,"final":0.31,"win":0.06},{"Team":"DR Congo","r32":29.36,"r16":9.45,"qf":2.5,"sf":0.67,"final":0.16,"win":0.04},{"Team":"Qatar","r32":57.01,"r16":14.67,"qf":3.53,"sf":0.71,"final":0.08,"win":0.03},{"Team":"South Africa","r32":35.7,"r16":9.65,"qf":2.55,"sf":0.5,"final":0.12,"win":0.03},{"Team":"Jordan","r32":32.48,"r16":9.34,"qf":2.44,"sf":0.48,"final":0.1,"win":0.03},{"Team":"Bosnia and Herzegovina","r32":45.73,"r16":12.51,"qf":3.12,"sf":0.57,"final":0.13,"win":0.01},{"Team":"Haiti","r32":35.08,"r16":9.47,"qf":2.06,"sf":0.47,"final":0.07,"win":0.01},{"Team":"Curaçao","r32":36.8,"r16":8.92,"qf":1.55,"sf":0.22,"final":0.04,"win":0.01},{"Team":"Iraq","r32":34.79,"r16":10.95,"qf":2.82,"sf":0.63,"final":0.11,"win":0.01},{"Team":"Saudi Arabia","r32":49.45,"r16":14.98,"qf":3.46,"sf":0.84,"final":0.14,"win":0.01},{"Team":"Cape Verde","r32":29.04,"r16":7.02,"qf":1.31,"sf":0.15,"final":0.01,"win":0},{"Team":"Ghana","r32":28.65,"r16":6.8,"qf":1.48,"sf":0.26,"final":0.03,"win":0}];
-
-    const stageLabels = {
-      r32: "Round of 32",
-      r16: "Round of 16",
-      qf: "Quarter-finals",
-      sf: "Semi-finals",
-      final: "Final",
-      champion: "Champion"
-    };
-
-    const $ = (selector) => document.querySelector(selector);
-    const $$ = (selector) => Array.from(document.querySelectorAll(selector));
-
-    const dashboardPayload = window.WORLD_CUP_DASHBOARD_DATA || null;
-    const activeResults = dashboardPayload?.charts?.allTeams
-      ? dashboardPayload.charts.allTeams.map((row) => ({
-          Team: row.team,
-          r32: row.r32,
-          r16: row.r16,
-          qf: row.qf,
-          sf: row.sf,
-          final: row.final,
-          win: row.win
-        }))
-      : simulationResults;
-    const sortedTeams = [...activeResults].sort((a, b) => b.win - a.win);
-    const allTeamNames = activeResults.map((item) => item.Team);
-
-    function initials(name) {
-      return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
-    }
-
-    function probabilityFor(team, key) {
-      const row = activeResults.find((item) => item.Team === team);
-      return row ? row[key] : 0;
-    }
-
-    function weightedWinner(teamA, teamB, stageKey) {
-      const a = probabilityFor(teamA, stageKey) + probabilityFor(teamA, "win") * 1.8;
-      const b = probabilityFor(teamB, stageKey) + probabilityFor(teamB, "win") * 1.8;
-      return a >= b ? teamA : teamB;
-    }
-
-    function generatedScore(winner, loser) {
-      const gap = Math.max(1, Math.round((probabilityFor(winner, "win") - probabilityFor(loser, "win")) / 4) + 1);
-      const loserGoals = probabilityFor(loser, "win") > 4 ? 1 : 0;
-      return `${Math.min(loserGoals + gap, 4)}-${loserGoals}`;
-    }
-
-    function generateBracket(seedOffset = 0) {
-      const seeding = [...sortedTeams];
-      if (seedOffset > 0) {
-        seeding.sort((a, b) => (b.win + Math.random() * seedOffset) - (a.win + Math.random() * seedOffset));
-      }
-
-      const r32Teams = seeding.slice(0, 32).map((item) => item.Team);
-      const seedOrder = [0,31,15,16,7,24,8,23,3,28,12,19,4,27,11,20,1,30,14,17,6,25,9,22,2,29,13,18,5,26,10,21];
-      let currentTeams = seedOrder.map((index) => r32Teams[index]);
-      const rounds = [];
-
-      [
-        ["r32", "r16"],
-        ["r16", "qf"],
-        ["qf", "sf"],
-        ["sf", "final"],
-        ["final", "win"]
-      ].forEach(([roundKey, nextKey]) => {
-        const matches = [];
-        const winners = [];
-        for (let i = 0; i < currentTeams.length; i += 2) {
-          const home = currentTeams[i];
-          const away = currentTeams[i + 1];
-          const winner = weightedWinner(home, away, nextKey);
-          const loser = winner === home ? away : home;
-          winners.push(winner);
-          matches.push({
-            id: `${roundKey}-${i / 2 + 1}`,
-            roundKey,
-            home,
-            away,
-            winner,
-            score: generatedScore(winner, loser),
-            homeProb: probabilityFor(home, nextKey),
-            awayProb: probabilityFor(away, nextKey)
-          });
-        }
-        rounds.push({ key: roundKey, label: stageLabels[roundKey], matches });
-        currentTeams = winners;
-      });
-
-      return {
-        rounds,
-        champion: currentTeams[0]
-      };
-    }
-
-    function bracketFromPayload(payload) {
-      if (!payload?.bracket?.rounds) return null;
-      return {
-        rounds: payload.bracket.rounds.map((round) => ({
-          key: round.key,
-          label: round.name,
-          matches: round.matches.map((match) => ({
-            id: match.id,
-            roundKey: round.key,
-            home: match.home,
-            away: match.away,
-            winner: match.winner,
-            score: match.score,
-            homeProb: match.home_probability,
-            awayProb: match.away_probability
-          }))
-        })),
-        champion: payload.bracket.champion
-      };
-    }
-
-    const generatedBracket = bracketFromPayload(dashboardPayload);
-    let currentBracket = generatedBracket || generateBracket();
-
-    function renderLeaderboard() {
-      const top = sortedTeams.slice(0, 10);
-      const max = Math.max(...top.map((item) => item.win));
-      $("#leaderboard").innerHTML = top.map((item, index) => `
-        <div class="team-row">
-          <div class="rank">${String(index + 1).padStart(2, "0")}</div>
-          <div class="team">
-            <span class="badge">${initials(item.Team)}</span>
-            <span class="team-name">${item.Team}</span>
-          </div>
-          <div class="bar-shell"><div class="bar" data-width="${(item.win / max) * 100}"></div></div>
-          <div class="percent">${item.win.toFixed(2)}%</div>
-        </div>
-      `).join("");
-
-      requestAnimationFrame(() => {
-        $$(".bar").forEach((bar) => {
-          bar.style.width = `${bar.dataset.width}%`;
-        });
-      });
-    }
-
-    function renderMetrics() {
-      const favorite = sortedTeams[0];
-      const averageR32 = activeResults.reduce((sum, item) => sum + item.r32, 0) / activeResults.length;
-      const contenders = activeResults.filter((item) => item.win >= 1).length;
-      $("#metrics").innerHTML = `
-        <div class="metric"><span>Favorite</span><strong>${favorite.Team}</strong></div>
-        <div class="metric"><span>Win Probability</span><strong>${favorite.win.toFixed(2)}%</strong></div>
-        <div class="metric"><span>1%+ Contenders</span><strong>${contenders}</strong></div>
-        <div class="metric"><span>Avg R32 Chance</span><strong>${averageR32.toFixed(1)}%</strong></div>
-        <div class="metric"><span>Simulations</span><strong>10k</strong></div>
-        <div class="metric"><span>Bracket Teams</span><strong>32</strong></div>
-      `;
-
-      $("#snapshotTable").innerHTML = sortedTeams.slice(0, 8).map((item) => `
-        <tr>
-          <td>${item.Team}</td>
-          <td>${item.r32.toFixed(1)}%</td>
-          <td>${item.final.toFixed(1)}%</td>
-          <td>${item.win.toFixed(2)}%</td>
-        </tr>
-      `).join("");
-    }
-
-    function renderPitchTicks() {
-      const field = $(".pitch-field");
-      if (!field || field.dataset.seeded === "true") return;
-      const fragment = document.createDocumentFragment();
-      activeResults.forEach((team, index) => {
-        const tick = document.createElement("span");
-        tick.className = "seed-tick";
-        tick.title = `${team.Team}: ${team.win.toFixed(2)}%`;
-        tick.style.left = `${5 + (index / (activeResults.length - 1)) * 90}%`;
-        tick.style.height = `${8 + Math.max(2, team.win * 3.1)}px`;
-        tick.style.opacity = String(0.32 + Math.min(team.win / 14, 0.68));
-        fragment.appendChild(tick);
-      });
-      field.appendChild(fragment);
-      field.dataset.seeded = "true";
-    }
-
-    function matchTemplate(match, roundIndex) {
-      const homeWon = match.winner === match.home;
-      const awayWon = match.winner === match.away;
-      const tooltip = `${match.winner} advances, projected score ${match.score}. ${match.home}: ${match.homeProb.toFixed(1)}%, ${match.away}: ${match.awayProb.toFixed(1)}%.`;
-      return `
-        <article class="match" data-round="${roundIndex}">
-          <div class="match-meta"><span>${match.id.toUpperCase()}</span><span>${match.score}</span></div>
-          <div class="side ${homeWon ? "winner" : ""}">
-            <span class="flag">${initials(match.home)}</span>
-            <span class="side-name">${match.home}</span>
-            <span class="side-prob">${match.homeProb.toFixed(1)}%</span>
-          </div>
-          <div class="side ${awayWon ? "winner" : ""}">
-            <span class="flag">${initials(match.away)}</span>
-            <span class="side-name">${match.away}</span>
-            <span class="side-prob">${match.awayProb.toFixed(1)}%</span>
-          </div>
-          <div class="tooltip"><strong>${match.winner}</strong><br>${tooltip}</div>
+          <div class="leaderboard" id="leaderboard"></div>
         </article>
-      `;
-    }
 
-    function renderBracket(bracket) {
-      const roundsMarkup = bracket.rounds.map((round, index) => {
-        const roundClass = index === 1 ? "r16" : index === 2 ? "qf" : index === 3 ? "sf" : index === 4 ? "final" : "";
-        return `
-          <section class="round ${roundClass}">
-            <div class="round-title">${round.label}</div>
-            ${round.matches.map((match) => matchTemplate(match, index)).join("")}
-          </section>
-        `;
-      }).join("");
-
-      $("#bracketTree").innerHTML = `
-        ${roundsMarkup}
-        <section class="round champion-round">
-          <div class="round-title">Champion</div>
-          <article class="match champion-card">
+        <aside class="panel">
+          <div class="panel-head">
             <div>
-              <div class="champion-label">Projected Winner</div>
-              <div class="champion-name">${bracket.champion}</div>
-              <div class="badge" style="margin:12px auto 0">${initials(bracket.champion)}</div>
+              <div class="panel-title">Prediction Snapshot</div>
+              <div class="panel-kicker">Stochastic aggregates</div>
             </div>
-          </article>
-        </section>
-      `;
-      $("#bracketMeta").textContent = `${bracket.champion} lifts the trophy`;
+          </div>
+          <div class="metrics-grid" id="metrics"></div>
+          <div class="section-divider"><h3>Championship Contenders</h3></div>
+          <table class="mini-table">
+            <thead><tr><th>Team</th><th>R32</th><th>Final</th><th>Win</th></tr></thead>
+            <tbody id="snapshotTable"></tbody>
+          </table>
+        </aside>
+      </div>
+    </div>
+
+    <!-- BRACKET -->
+    <div class="view" id="bracket">
+      <div class="bracket-wrap" id="bracketWrap">
+        <div class="bracket-toolbar">
+          <div>
+            <div class="panel-title">Interactive Knockout Tree</div>
+            <p>Hover a match for probabilities and projected score. Scroll horizontally to navigate rounds.</p>
+          </div>
+          <div class="bracket-champion-tag" id="bracketMeta">--</div>
+        </div>
+        <div class="bracket-scroll">
+          <div class="bracket" id="bracketTree"></div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+</main>
+
+<script src="world_cup_dashboard_data.js"></script>
+<script src="dashboard_data/world_cup_dashboard_data.js"></script>
+<script>
+const simulationResults=[{"Team":"Argentina","r32":99.20,"r16":71.46,"qf":49.19,"sf":31.78,"final":20.04,"win":12.35},{"Team":"Spain","r32":86.93,"r16":61.06,"qf":42.39,"sf":29.43,"final":19.04,"win":11.53},{"Team":"France","r32":98.40,"r16":67.86,"qf":45.38,"sf":26.68,"final":16.37,"win":9.64},{"Team":"England","r32":98.51,"r16":65.02,"qf":40.28,"sf":24.20,"final":14.05,"win":8.22},{"Team":"Portugal","r32":76.41,"r16":53.55,"qf":35.40,"sf":23.31,"final":13.92,"win":7.94},{"Team":"Netherlands","r32":82.92,"r16":53.83,"qf":32.73,"sf":18.96,"final":10.60,"win":5.40},{"Team":"Germany","r32":98.20,"r16":61.33,"qf":36.42,"sf":19.90,"final":10.27,"win":5.21},{"Team":"Belgium","r32":91.57,"r16":54.40,"qf":30.91,"sf":17.50,"final":9.33,"win":4.50},{"Team":"Brazil","r32":83.58,"r16":52.20,"qf":29.72,"sf":17.20,"final":9.09,"win":4.41},{"Team":"Colombia","r32":97.74,"r16":57.84,"qf":30.98,"sf":16.55,"final":8.13,"win":4.11},{"Team":"Morocco","r32":99.98,"r16":54.03,"qf":28.84,"sf":14.59,"final":6.55,"win":2.92},{"Team":"Mexico","r32":100.00,"r16":54.27,"qf":27.18,"sf":13.63,"final":6.12,"win":2.56},{"Team":"Japan","r32":78.84,"r16":45.43,"qf":24.07,"sf":12.11,"final":5.63,"win":2.50},{"Team":"Switzerland","r32":100.00,"r16":53.45,"qf":26.79,"sf":12.39,"final":5.61,"win":2.35},{"Team":"Ecuador","r32":69.91,"r16":39.23,"qf":20.89,"sf":9.96,"final":4.64,"win":2.06},{"Team":"Norway","r32":88.07,"r16":45.97,"qf":22.72,"sf":10.56,"final":4.35,"win":1.93},{"Team":"Croatia","r32":81.83,"r16":43.83,"qf":21.78,"sf":9.95,"final":4.30,"win":1.66},{"Team":"Uruguay","r32":87.66,"r16":44.82,"qf":21.85,"sf":9.18,"final":3.69,"win":1.39},{"Team":"Austria","r32":80.07,"r16":42.33,"qf":20.53,"sf":9.08,"final":3.50,"win":1.25},{"Team":"Australia","r32":76.48,"r16":36.37,"qf":16.62,"sf":6.86,"final":2.87,"win":1.07},{"Team":"Turkey","r32":84.84,"r16":40.73,"qf":18.42,"sf":7.92,"final":2.98,"win":0.96},{"Team":"Algeria","r32":62.53,"r16":32.11,"qf":14.30,"sf":5.76,"final":2.13,"win":0.75},{"Team":"Iran","r32":58.12,"r16":28.37,"qf":12.51,"sf":5.19,"final":1.99,"win":0.68},{"Team":"Canada","r32":68.61,"r16":30.91,"qf":13.10,"sf":5.00,"final":1.99,"win":0.60},{"Team":"Paraguay","r32":58.04,"r16":27.60,"qf":11.98,"sf":4.72,"final":1.72,"win":0.58},{"Team":"Scotland","r32":75.15,"r16":32.93,"qf":12.42,"sf":4.42,"final":1.51,"win":0.53},{"Team":"United States","r32":50.81,"r16":24.02,"qf":10.36,"sf":4.26,"final":1.59,"win":0.51},{"Team":"South Korea","r32":73.67,"r16":32.69,"qf":13.48,"sf":4.87,"final":1.67,"win":0.47},{"Team":"Senegal","r32":56.70,"r16":27.52,"qf":11.63,"sf":4.54,"final":1.68,"win":0.44},{"Team":"Ivory Coast","r32":59.21,"r16":25.38,"qf":9.51,"sf":3.58,"final":1.10,"win":0.35},{"Team":"Egypt","r32":74.27,"r16":30.22,"qf":11.16,"sf":3.52,"final":0.97,"win":0.30},{"Team":"Panama","r32":68.54,"r16":26.37,"qf":9.16,"sf":2.84,"final":0.91,"win":0.27},{"Team":"Czech Republic","r32":80.96,"r16":30.36,"qf":10.84,"sf":3.69,"final":1.03,"win":0.25},{"Team":"Uzbekistan","r32":60.63,"r16":25.71,"qf":9.56,"sf":3.29,"final":1.06,"win":0.16},{"Team":"Sweden","r32":53.77,"r16":20.02,"qf":6.46,"sf":2.10,"final":0.50,"win":0.14},{"Team":"Tunisia","r32":56.64,"r16":19.06,"qf":5.55,"sf":1.51,"final":0.33,"win":0.12},{"Team":"New Zealand","r32":42.23,"r16":15.21,"qf":4.52,"sf":1.32,"final":0.31,"win":0.06},{"Team":"DR Congo","r32":29.36,"r16":9.45,"qf":2.50,"sf":0.67,"final":0.16,"win":0.04},{"Team":"Qatar","r32":57.01,"r16":14.67,"qf":3.53,"sf":0.71,"final":0.08,"win":0.03},{"Team":"South Africa","r32":35.70,"r16":9.65,"qf":2.55,"sf":0.50,"final":0.12,"win":0.03},{"Team":"Jordan","r32":32.48,"r16":9.34,"qf":2.44,"sf":0.48,"final":0.10,"win":0.03},{"Team":"Bosnia and Herzegovina","r32":45.73,"r16":12.51,"qf":3.12,"sf":0.57,"final":0.13,"win":0.01},{"Team":"Haiti","r32":35.08,"r16":9.47,"qf":2.06,"sf":0.47,"final":0.07,"win":0.01},{"Team":"Curaçao","r32":36.80,"r16":8.92,"qf":1.55,"sf":0.22,"final":0.04,"win":0.01},{"Team":"Iraq","r32":34.79,"r16":10.95,"qf":2.82,"sf":0.63,"final":0.11,"win":0.01},{"Team":"Saudi Arabia","r32":49.45,"r16":14.98,"qf":3.46,"sf":0.84,"final":0.14,"win":0.01},{"Team":"Cape Verde","r32":29.04,"r16":7.02,"qf":1.31,"sf":0.15,"final":0.01,"win":0},{"Team":"Ghana","r32":28.65,"r16":6.80,"qf":1.48,"sf":0.26,"final":0.03,"win":0}];
+
+const stageLabels={r32:"Round of 32",r16:"Round of 16",qf:"Quarter-finals",sf:"Semi-finals",final:"Final",champion:"Champion"};
+const $=s=>document.querySelector(s);
+const $$=s=>Array.from(document.querySelectorAll(s));
+
+const dashboardPayload=window.WORLD_CUP_DASHBOARD_DATA||null;
+const activeResults=dashboardPayload?.charts?.allTeams?dashboardPayload.charts.allTeams.map(r=>({Team:r.team,r32:r.r32,r16:r.r16,qf:r.qf,sf:r.sf,final:r.final,win:r.win})):simulationResults;
+const sortedTeams=[...activeResults].sort((a,b)=>b.win-a.win);
+const allTeamNames=activeResults.map(i=>i.Team);
+
+function initials(n){return n.split(/\s+/).filter(Boolean).slice(0,2).map(p=>p[0]).join("").toUpperCase()}
+
+const countryCode={"Argentina":"ar","Spain":"es","France":"fr","England":"gb-eng","Portugal":"pt","Netherlands":"nl","Germany":"de","Belgium":"be","Brazil":"br","Colombia":"co","Morocco":"ma","Mexico":"mx","Japan":"jp","Switzerland":"ch","Ecuador":"ec","Norway":"no","Croatia":"hr","Uruguay":"uy","Austria":"at","Australia":"au","Turkey":"tr","Algeria":"dz","Iran":"ir","Canada":"ca","Paraguay":"py","Scotland":"gb-sct","United States":"us","South Korea":"kr","Senegal":"sn","Ivory Coast":"ci","Egypt":"eg","Panama":"pa","Czech Republic":"cz","Uzbekistan":"uz","Sweden":"se","Tunisia":"tn","New Zealand":"nz","DR Congo":"cd","Qatar":"qa","South Africa":"za","Jordan":"jo","Bosnia and Herzegovina":"ba","Haiti":"ht","Curaçao":"cw","Iraq":"iq","Saudi Arabia":"sa","Cape Verde":"cv","Ghana":"gh","Italy":"it","Denmark":"dk","Poland":"pl","Serbia":"rs","Wales":"gb-wls","Chile":"cl","Peru":"pe","Nigeria":"ng","Cameroon":"cm","Costa Rica":"cr","Honduras":"hn","China":"cn","India":"in","Russia":"ru","Ukraine":"ua","Greece":"gr","Romania":"ro","Hungary":"hu","Slovakia":"sk","Republic of Ireland":"ie","Iceland":"is","Finland":"fi","Kenya":"ke","Bahrain":"bh","Oman":"om","Kuwait":"kw","Bolivia":"bo","Venezuela":"ve","Guatemala":"gt","El Salvador":"sv","Jamaica":"jm","Trinidad and Tobago":"tt","Palestine":"ps","Syria":"sy","Tajikistan":"tj","Thailand":"th","Vietnam":"vn","Malaysia":"my","Indonesia":"id","Philippines":"ph"};
+function flagUrl(team){const c=countryCode[team];return c?`https://flagcdn.com/w80/${c}.png`:""}
+function flagImg(team,cls){const u=flagUrl(team);return u?`<img src="${u}" alt="${team}" loading="lazy">`:`<span style="font-size:7px;font-weight:900;display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:var(--text-primary)">${initials(team)}</span>`}
+function probFor(t,k){const r=activeResults.find(i=>i.Team===t);return r?r[k]:0}
+function wWinner(a,b,sk){const sa=probFor(a,sk)+probFor(a,"win")*1.8;const sb=probFor(b,sk)+probFor(b,"win")*1.8;return sa>=sb?a:b}
+function genScore(w,l){const g=Math.max(1,Math.round((probFor(w,"win")-probFor(l,"win"))/4)+1);const lg=probFor(l,"win")>3?1:0;return`${Math.min(lg+g,4)}-${lg}`}
+
+function generateBracket(seedOff=0){
+  const s=[...sortedTeams];
+  if(seedOff>0)s.sort((a,b)=>(b.win+Math.random()*seedOff)-(a.win+Math.random()*seedOff));
+  const r32T=s.slice(0,32).map(i=>i.Team);
+  const so=[0,31,15,16,7,24,8,23,3,28,12,19,4,27,11,20,1,30,14,17,6,25,9,22,2,29,13,18,5,26,10,21];
+  let cur=so.map(i=>r32T[i]);
+  const rounds=[];
+  [["r32","r16"],["r16","qf"],["qf","sf"],["sf","final"],["final","win"]].forEach(([rk,nk])=>{
+    const matches=[];const winners=[];
+    for(let i=0;i<cur.length;i+=2){
+      const h=cur[i],a=cur[i+1];
+      const w=wWinner(h,a,nk);const l=w===h?a:h;
+      winners.push(w);
+      matches.push({id:`${rk}-${i/2+1}`,roundKey:rk,home:h,away:a,winner:w,score:genScore(w,l),homeProb:probFor(h,nk),awayProb:probFor(a,nk)});
     }
+    rounds.push({key:rk,label:stageLabels[rk],matches});
+    cur=winners;
+  });
+  return{rounds,champion:cur[0]};
+}
 
-    function randomTeam() {
-      return allTeamNames[Math.floor(Math.random() * allTeamNames.length)];
+function bracketFromPayload(p){
+  if(!p?.bracket?.rounds)return null;
+  return{rounds:p.bracket.rounds.map(r=>({key:r.key,label:r.name,matches:r.matches.map(m=>({id:m.id,roundKey:r.key,home:m.home,away:m.away,winner:m.winner,score:m.score,homeProb:m.home_probability,awayProb:m.away_probability}))})),champion:p.bracket.champion};
+}
+
+const payloadBracket=bracketFromPayload(dashboardPayload);
+let currentBracket=payloadBracket||generateBracket();
+
+function renderLeaderboard(){
+  const top=sortedTeams.slice(0,20);
+  const max=Math.max(...top.map(i=>i.win));
+  $("#leaderboard").innerHTML=top.map((item,idx)=>`
+    <div class="team-row">
+      <div class="rank">${String(idx+1).padStart(2,"0")}</div>
+      <div class="team-info">
+        <span class="team-badge">${flagImg(item.Team)}</span>
+        <span class="team-name">${item.Team}</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" data-w="${(item.win/max)*100}"></div></div>
+      <div class="pct">${item.win.toFixed(2)}%</div>
+    </div>
+  `).join("");
+  requestAnimationFrame(()=>{$$(".bar-fill").forEach(b=>{b.style.width=b.dataset.w+"%"})});
+}
+
+function renderMetrics(){
+  const fav=sortedTeams[0];
+  const avgR32=activeResults.reduce((s,i)=>s+i.r32,0)/activeResults.length;
+  const cont=activeResults.filter(i=>i.win>=1).length;
+  $("#metrics").innerHTML=`
+    <div class="metric-card"><span class="label">Favorite</span><span class="value">${fav.Team}</span></div>
+    <div class="metric-card"><span class="label">Win Probability</span><span class="value green">${fav.win.toFixed(2)}%</span></div>
+    <div class="metric-card"><span class="label">Contenders (1%+)</span><span class="value">${cont}</span></div>
+    <div class="metric-card"><span class="label">Avg R32 Cut</span><span class="value">${avgR32.toFixed(1)}%</span></div>
+  `;
+  $("#snapshotTable").innerHTML=sortedTeams.slice(0,20).map(i=>`
+    <tr>
+      <td><span class="tbl-badge">${flagImg(i.Team)}</span>${i.Team}</td>
+      <td>${i.r32.toFixed(1)}%</td>
+      <td>${i.final.toFixed(1)}%</td>
+      <td>${i.win.toFixed(2)}%</td>
+    </tr>
+  `).join("");
+}
+
+function highlightTeam(team) {
+  const tree = document.getElementById("bracketTree");
+  if (!tree) return;
+  tree.classList.add("highlight-active");
+  document.querySelectorAll(`.m-team[data-team="${team}"]`).forEach(el => {
+    el.classList.add("highlighted");
+  });
+}
+
+function clearHighlight() {
+  const tree = document.getElementById("bracketTree");
+  if (!tree) return;
+  tree.classList.remove("highlight-active");
+  document.querySelectorAll(".m-team.highlighted").forEach(el => {
+    el.classList.remove("highlighted");
+  });
+}
+
+function matchHTML(m, pos = 'solo'){
+  const hw=m.winner===m.home,aw=m.winner===m.away;
+  const parts = (m.score || "0-0").split("-");
+  const homeScore = hw ? parts[0] : parts[1];
+  const awayScore = aw ? parts[0] : parts[1];
+  
+  return `
+    <article class="match ${pos} ${hw?'hw-won':'aw-won'}" data-match-id="${m.id}">
+      <div class="match-inner">
+        <div class="m-head">
+          <span class="m-id">${m.id.toUpperCase()}</span>
+          <span class="m-status">FT</span>
+        </div>
+        <div class="m-team ${hw?'w':''}" data-team="${m.home}" onmouseenter="highlightTeam('${m.home}')" onmouseleave="clearHighlight()">
+          <span class="m-flag">${flagImg(m.home)}</span>
+          <span class="m-name">${m.home}</span>
+          <span class="m-pct">${m.homeProb.toFixed(1)}%</span>
+          <span class="m-score-val">${homeScore}</span>
+        </div>
+        <div class="m-team ${aw?'w':''}" data-team="${m.away}" onmouseenter="highlightTeam('${m.away}')" onmouseleave="clearHighlight()">
+          <span class="m-flag">${flagImg(m.away)}</span>
+          <span class="m-name">${m.away}</span>
+          <span class="m-pct">${m.awayProb.toFixed(1)}%</span>
+          <span class="m-score-val">${awayScore}</span>
+        </div>
+      </div>
+      <div class="tip">
+        <strong>${m.winner}</strong> advances — ${m.score}<br>
+        ${m.home}: ${m.homeProb.toFixed(1)}% · ${m.away}: ${m.awayProb.toFixed(1)}%
+      </div>
+    </article>`;
+}
+
+function renderBracket(br){
+  const trophySvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 19.24 7 20v2"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 19.24 17 20v2"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>`;
+  const rd=br.rounds;
+  const r32=rd[0],r16=rd[1],qf=rd[2],sf=rd[3],fn=rd[4];
+
+  function col(label,matches,paired,solo){
+    let body='';
+    if(paired){
+      for(let i=0;i<matches.length;i+=2){
+        body+=`<div class="bkt-pair">${matchHTML(matches[i], 'top')}${matches[i+1]?matchHTML(matches[i+1], 'bottom'):''}</div>`;
+      }
+    } else {
+      body=`<div class="bkt-pair">${matches.map(m=>matchHTML(m, 'solo')).join('')}</div>`;
     }
+    return `<div class="bkt-col${solo?' bkt-solo':''}"><div class="bkt-col-header">${label}</div>${body}</div>`;
+  }
 
-    function renderRandomizedBracket() {
-      const fakeRounds = [
-        ["r32", 16],
-        ["r16", 8],
-        ["qf", 4],
-        ["sf", 2],
-        ["final", 1]
-      ].map(([key, count]) => ({
-        key,
-        label: stageLabels[key],
-        matches: Array.from({ length: count }, (_, index) => {
-          const home = randomTeam();
-          let away = randomTeam();
-          if (away === home) away = randomTeam();
-          const winner = Math.random() > 0.5 ? home : away;
-          return {
-            id: `${key}-${index + 1}`,
-            roundKey: key,
-            home,
-            away,
-            winner,
-            score: `${Math.floor(Math.random() * 4)}-${Math.floor(Math.random() * 3)}`,
-            homeProb: Math.random() * 100,
-            awayProb: Math.random() * 100
-          };
-        })
-      }));
+  const champWin=probFor(br.champion,'win');
+  const finalWin=probFor(br.champion,'final');
+  const sfWin=probFor(br.champion,'sf');
+  const qfWin=probFor(br.champion,'qf');
+  const ratingVal = Math.round(85 + (champWin / 13) * 14); // FUT rating between 85 and 99
 
-      renderBracket({ rounds: fakeRounds, champion: randomTeam() });
-    }
+  $("#bracketTree").innerHTML=`
+    <div class="bkt">
+      <div class="bkt-half bkt-left">
+        ${col('Round of 32',r32.matches.slice(0,8),true)}
+        ${col('Round of 16',r16.matches.slice(0,4),true)}
+        ${col('Quarter-Finals',qf.matches.slice(0,2),true)}
+        ${col('Semi-Final',[sf.matches[0]],false,true)}
+      </div>
+      <div class="bkt-center">
+        <div class="fut-card">
+          <div class="fut-header">
+            <div class="fut-rating">${ratingVal}</div>
+            <div class="fut-pos">CHAMP</div>
+          </div>
+          <div class="fut-badge">
+            <div class="fut-flag">${flagImg(br.champion)}</div>
+            <div class="fut-trophy-overlay">
+              ${trophySvg}
+            </div>
+          </div>
+          <div class="fut-team-name">${br.champion}</div>
+          <div class="fut-stats">
+            <div class="fut-stat-row">
+              <div class="fut-stat"><span>WIN</span><strong>${champWin.toFixed(1)}%</strong></div>
+              <div class="fut-stat"><span>FIN</span><strong>${finalWin.toFixed(1)}%</strong></div>
+            </div>
+            <div class="fut-stat-row">
+              <div class="fut-stat"><span>SF</span><strong>${sfWin.toFixed(1)}%</strong></div>
+              <div class="fut-stat"><span>QF</span><strong>${qfWin.toFixed(1)}%</strong></div>
+            </div>
+          </div>
+        </div>
+        ${col('Final',fn.matches,false,true)}
+      </div>
+      <div class="bkt-half bkt-right">
+        ${col('Semi-Final',[sf.matches[1]],false,true)}
+        ${col('Quarter-Finals',qf.matches.slice(2,4),true)}
+        ${col('Round of 16',r16.matches.slice(4,8),true)}
+        ${col('Round of 32',r32.matches.slice(8,16),true)}
+      </div>
+    </div>
+  `;
+  $("#bracketMeta").textContent=`${br.champion.toUpperCase()} WINS THE WORLD CUP`;
+}
 
-    function runSimulationAnimation() {
-      const button = $("#simulateBtn");
-      const wrap = $("#bracketWrap");
-      button.disabled = true;
-      button.textContent = "Simulating...";
-      wrap.classList.add("is-simulating");
-      $("#bracketMeta").textContent = "Monte Carlo shuffle running";
+function randomTeam(){return allTeamNames[Math.floor(Math.random()*allTeamNames.length)]}
+function renderRandomBracket(){
+  const fakeRounds=[["r32",16],["r16",8],["qf",4],["sf",2],["final",1]].map(([k,c])=>({
+    key:k,label:stageLabels[k],
+    matches:Array.from({length:c},(_,i)=>{
+      const h=randomTeam();let a=randomTeam();if(a===h)a=randomTeam();
+      const w=Math.random()>0.5?h:a;
+      return{id:`${k}-${i+1}`,roundKey:k,home:h,away:a,winner:w,score:`${Math.floor(Math.random()*4)}-${Math.floor(Math.random()*3)}`,homeProb:Math.random()*100,awayProb:Math.random()*100};
+    })
+  }));
+  renderBracket({rounds:fakeRounds,champion:randomTeam()});
+}
 
-      const interval = setInterval(renderRandomizedBracket, 95);
-      setTimeout(() => {
-        clearInterval(interval);
-        currentBracket = generatedBracket || generateBracket(0.8);
-        renderBracket(currentBracket);
-        wrap.classList.remove("is-simulating");
-        button.disabled = false;
-        button.textContent = "Run Simulation";
-      }, 1500);
-    }
+function runSim(){
+  const btn=$("#simulateBtn");
+  const wrap=$("#bracketWrap");
+  btn.disabled=true;
+  btn.querySelector("span").textContent="Simulating...";
+  wrap.classList.add("is-simulating");
+  $("#bracketMeta").textContent="MONTE CARLO SHUFFLE RUNNING...";
+  const iv=setInterval(renderRandomBracket,90);
+  setTimeout(()=>{
+    clearInterval(iv);
+    currentBracket=payloadBracket||generateBracket(0.7);
+    renderBracket(currentBracket);
+    wrap.classList.remove("is-simulating");
+    btn.disabled=false;
+    btn.querySelector("span").textContent="Run Monte Carlo Shuffle";
+  },1500);
+}
 
-    function bindTabs() {
-      $$(".tab").forEach((tab) => {
-        tab.addEventListener("click", () => {
-          $$(".tab").forEach((item) => item.classList.remove("active"));
-          $$(".view").forEach((item) => item.classList.remove("active"));
-          tab.classList.add("active");
-          $(`#${tab.dataset.tab}`).classList.add("active");
-        });
-      });
-    }
+function bindTabs(){
+  $$(".tab").forEach(t=>{
+    t.addEventListener("click",()=>{
+      $$(".tab").forEach(b=>{b.classList.remove("active")});
+      $$(".view").forEach(v=>{v.classList.remove("active")});
+      t.classList.add("active");
+      $(`#${t.dataset.tab}`).classList.add("active");
+    });
+  });
+}
 
-    function initializeDashboard() {
-      $("#teamCount").textContent = activeResults.length;
-      renderPitchTicks();
-      setTimeout(() => {
-        $("#loadStatus").textContent = "CSV mock loaded";
-        $("#loading").style.display = "none";
-        $("#appViews").style.display = "block";
-        renderLeaderboard();
-        renderMetrics();
-        renderBracket(currentBracket);
-      }, 850);
-    }
+function init(){
+  $("#teamCount").textContent=activeResults.length;
+  setTimeout(()=>{
+    $("#loadStatus").textContent="DATA LOADED";
+    $("#loading").style.display="none";
+    $("#appViews").style.display="block";
+    renderLeaderboard();
+    renderMetrics();
+    renderBracket(currentBracket);
+  },600);
+}
 
-    bindTabs();
-    $("#simulateBtn").addEventListener("click", runSimulationAnimation);
-    initializeDashboard();
-  </script>
+bindTabs();
+$("#simulateBtn").addEventListener("click",runSim);
+init();
+</script>
 </body>
 </html>
